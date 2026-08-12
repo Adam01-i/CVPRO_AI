@@ -198,4 +198,79 @@ describe('AiService', () => {
     expect(result.atsScore).toBeGreaterThan(0);
     expect(prisma.aIAnalysis.create).toHaveBeenCalled();
   });
+
+  it('generates a structured CV improvement recommendation for a valid owned CV', async () => {
+    const cv = {
+      id: 'cv-2',
+      userId: 'user-1',
+      title: 'Developer',
+      summary: 'I build software for clients.',
+      profession: 'Software Developer',
+      email: 'dev@example.com',
+      phone: null,
+      address: null,
+      linkedin: 'https://linkedin.com/in/dev',
+      github: 'https://github.com/dev',
+      portfolio: null,
+      experiences: [{
+        id: 'exp-2',
+        position: 'Backend Developer',
+        company: 'Acme',
+        description: 'Wrote code for apps.',
+        startDate: new Date('2022-01-01'),
+        endDate: new Date('2024-01-01'),
+        isCurrent: false,
+      }],
+      educations: [{
+        id: 'edu-2',
+        degree: 'Bachelor',
+        field: 'Computer Science',
+        level: 'BAC_PLUS_3',
+        startDate: new Date('2018-01-01'),
+        endDate: new Date('2022-01-01'),
+        isCurrent: false,
+      }],
+      skills: [{ skill: { name: 'Java' } }, { skill: { name: 'Spring Boot' } }],
+      projects: [{ name: 'Payment API', description: 'Built a payment gateway.', technologies: 'Java, Spring Boot', githubUrl: 'https://github.com/dev/payments' }],
+      certifications: [],
+      languages: [{ name: 'English', level: 'B2' }],
+    };
+
+    prisma.cV.findUnique.mockResolvedValue(cv);
+    prisma.aIAnalysis.create.mockResolvedValue({
+      id: 'analysis-improve-1',
+      userId: 'user-1',
+      cvId: 'cv-2',
+      type: AnalysisType.CV_IMPROVEMENT,
+      status: AnalysisStatus.COMPLETED,
+      score: 74,
+      overallFeedback: 'Good base',
+      strengths: ['Profile with technical grounding'],
+      weaknesses: ['Summary too generic'],
+      recommendations: ['Add clear impact statements'],
+      extractedData: { scoreBefore: 68, scoreAfter: 84 },
+      rawResponse: { scoreBefore: 68, scoreAfter: 84 },
+      model: 'local-deterministic-cv-improvement-v1',
+      processingTime: 10,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+
+    const result = await service.improveCvForUser('user-1', 'cv-2');
+
+    expect(result).toBeDefined();
+    expect(result.scoreBefore).toBeGreaterThan(0);
+    expect(result.scoreAfter).toBeGreaterThan(result.scoreBefore);
+    expect(result.improvements.title).toBeDefined();
+    expect(result.keywords.length).toBeGreaterThan(0);
+    expect(prisma.aIAnalysis.create).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({ type: AnalysisType.CV_IMPROVEMENT }),
+    }));
+  });
+
+  it('rejects improving a CV that belongs to another user', async () => {
+    prisma.cV.findUnique.mockResolvedValue({ id: 'cv-3', userId: 'other-user' });
+
+    await expect(service.improveCvForUser('user-1', 'cv-3')).rejects.toThrow(ForbiddenException);
+  });
 });

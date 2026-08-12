@@ -713,6 +713,15 @@ export class AiService {
     this.semanticMatcher = new LocalSemanticMatcher();
   }
 
+  private clamp(value: number): number {
+    return Math.min(100, Math.max(0, value));
+  }
+
+  private isGenericWord(value: string): boolean {
+    const generic = new Set(['the', 'and', 'with', 'for', 'from', 'into', 'that', 'this', 'these', 'those', 'company', 'profile', 'developer', 'engineer', 'specialist', 'cv']);
+    return generic.has(value.toLowerCase());
+  }
+
   normalizeSkillName(value: string): string {
     if (!value) return '';
 
@@ -1118,6 +1127,213 @@ export class AiService {
       createdAt: persisted.createdAt,
       updatedAt: persisted.updatedAt,
     };
+  }
+
+  private async buildCvImprovementPayload(
+    userId: string,
+    cvId: string,
+    cv: Awaited<ReturnType<typeof this.assertCvOwnership>>,
+    jobOffer?: { title?: string | null; description?: string | null; requirements?: string | null; responsibilities?: string | null } | null,
+  ) {
+    const analysis = new LocalCVAnalysisEngine().analyze({
+      id: cv.id,
+      userId: cv.userId,
+      title: cv.title,
+      summary: cv.summary,
+      profession: cv.profession,
+      email: cv.email,
+      phone: cv.phone,
+      address: cv.address,
+      linkedin: cv.linkedin,
+      github: cv.github,
+      portfolio: cv.portfolio,
+      experiences: cv.experiences ?? [],
+      educations: cv.educations ?? [],
+      skills: cv.skills ?? [],
+      projects: cv.projects ?? [],
+      certifications: cv.certifications ?? [],
+      languages: cv.languages ?? [],
+    });
+
+    const scoreBefore = Math.max(0, Math.min(100, Number(analysis.score || 0)));
+    const skillNames = (cv.skills ?? [])
+      .map((item) => item?.skill?.name ?? '')
+      .filter(Boolean)
+      .map((name) => name.trim());
+    const keywordBase = [
+      cv.title,
+      cv.profession,
+      ...skillNames,
+      ...((cv.projects ?? []).map((project) => project.name).filter(Boolean) as string[]),
+      ...((cv.certifications ?? []).map((certification) => certification.name).filter(Boolean) as string[]),
+      ...(jobOffer ? [jobOffer.title, jobOffer.description, jobOffer.requirements, jobOffer.responsibilities].filter(Boolean) as string[] : []),
+    ]
+      .join(' ')
+      .split(/[^a-zA-Z0-9+#./-]+/)
+      .map((token) => token.trim())
+      .filter((token) => token.length > 2 && !this.isGenericWord(token));
+
+    const keywords = [...new Set(keywordBase)].slice(0, 12);
+    const title = (cv.title ?? '').trim() || 'Profil professionnel';
+    const profession = (cv.profession ?? '').trim() || 'Profession non explicitée';
+    const summary = (cv.summary ?? '').trim();
+    const hasGenericTitle = !title || /^(developer|engineer|consultant|specialist|manager|professional)$/i.test(title);
+    const hasWeakSummary = !summary || summary.length < 90;
+    const skillsGap = skillNames.length < 6;
+    const hasNoProjects = !((cv.projects ?? []).length > 0);
+
+    const scoreAfter = this.clamp(scoreBefore + (jobOffer ? 8 : 5) + (hasGenericTitle ? 2 : 0) + (hasWeakSummary ? 3 : 0) + (skillsGap ? 2 : 0) + (hasNoProjects ? 2 : 0));
+
+    const improvements = {
+      title: hasGenericTitle
+        ? `Rendre le titre plus précis et plus orienté métier : "${profession}" ou une version ciblée sur ${jobOffer?.title ?? 'le poste recherché'}.`
+        : 'Le titre actuel est déjà clair et peut être conservé si l’objectif est bien identifié.',
+      summary: hasWeakSummary
+        ? `Développer un résumé basé uniquement sur les éléments existants du CV : ${title}, ${profession}, ${skillNames.slice(0, 4).join(', ') || 'compétences techniques déjà listées'}.`
+        : 'Le résumé actuel est cohérent ; il peut être renforcé avec des résultats et un angle plus orienté cible.',
+      skills: skillsGap
+        ? `Compléter la section compétences avec les technologies et outils déjà présents dans le parcours professionnel et les projets : ${skillNames.slice(0, 6).join(', ') || 'les compétences existantes du CV'}.`
+        : 'La section compétences est déjà bien fournie et peut être organisée par catégories (backend, cloud, data, méthodologie).',
+      experience: ((cv.experiences ?? []).length > 0
+        ? (cv.experiences ?? []).map((experience) => {
+            const description = (experience.description ?? '').trim();
+            return description && description.length < 80
+              ? `Développer davantage l’expérience ${experience.position ?? 'professionnelle'} chez ${experience.company ?? 'l’entreprise'} avec des actions concrètes et un impact mesurable.`
+              : `Mettre en avant les résultats de ${experience.position ?? 'cette expérience'} chez ${experience.company ?? 'l’entreprise'} en mettant l’accent sur les technologies et les livrables.`;
+          })
+        : ['Ajouter des expériences professionnelles réelles avec missions, résultats et contexte métier.']
+      ).slice(0, 3),
+      projects: hasNoProjects
+        ? 'Mettre en avant au moins un projet concret déjà réalisé, avec contexte, technologies et impact mesuré, sans inventer d’information.'
+        : 'Valoriser les projets existants avec une structure claire : problématique, solution, technologies, impact.',
+    };
+
+    const recommendations = [
+      improvements.title,
+      improvements.summary,
+      improvements.skills,
+      ...improvements.experience,
+      improvements.projects,
+    ].filter(Boolean);
+
+    const persisted = await this.prisma.aIAnalysis.create({
+      data: {
+        userId,
+        cvId,
+        type: AnalysisType.CV_IMPROVEMENT,
+        status: AnalysisStatus.COMPLETED,
+        score: scoreAfter,
+        overallFeedback: jobOffer
+          ? `Le CV est déjà solide pour ${jobOffer.title}. Quelques ajustements ciblés peuvent renforcer l’alignement sans inventer d’éléments.`
+          : 'Le CV présente une bonne base. Un petit nombre d’ajustements de structure et de wording le rendra plus clair et plus impactant.',
+        strengths: [
+          'Le profil contient déjà des éléments de base exploitables.',
+          'Les compétences et la trajectoire professionnelle sont identifiables.',
+        ] as Prisma.InputJsonValue,
+        weaknesses: [
+          'Le résumé peut être plus orienté résultats.',
+          'Le titre et la structure peuvent gagner en clarté.',
+        ] as Prisma.InputJsonValue,
+        recommendations: recommendations as Prisma.InputJsonValue,
+        extractedData: {
+          scoreBefore,
+          scoreAfter,
+          jobTitle: jobOffer?.title ?? null,
+          keywords,
+          title: cv.title ?? null,
+          profession: cv.profession ?? null,
+          skillCount: skillNames.length,
+          projectCount: cv.projects?.length ?? 0,
+        } as Prisma.InputJsonValue,
+        rawResponse: {
+          scoreBefore,
+          scoreAfter,
+          keywords,
+          improvements,
+          tailored: !!jobOffer,
+        } as Prisma.InputJsonValue,
+        model: 'local-deterministic-cv-improvement-v1',
+        processingTime: 0,
+      },
+    });
+
+    const response = {
+      id: persisted.id,
+      userId: persisted.userId,
+      cvId: persisted.cvId,
+      type: persisted.type,
+      status: persisted.status,
+      scoreBefore,
+      scoreAfter,
+      improvements,
+      keywords,
+      recommendations,
+      model: persisted.model,
+      createdAt: persisted.createdAt,
+      updatedAt: persisted.updatedAt,
+    };
+
+    return response;
+  }
+
+  async improveCvForUser(userId: string, cvId: string) {
+    const cv = await this.assertCvOwnership(userId, cvId);
+    return this.buildCvImprovementPayload(userId, cvId, cv, null);
+  }
+
+  async improveCvForUserWithJobOffer(userId: string, cvId: string, jobOfferId: string) {
+    const cv = await this.assertCvOwnership(userId, cvId);
+
+    const jobOffer = await this.prisma.jobOffer.findUnique({
+      where: { id: jobOfferId },
+      select: {
+        id: true,
+        title: true,
+        description: true,
+        requirements: true,
+        responsibilities: true,
+        isActive: true,
+      },
+    });
+
+    if (!jobOffer) throw new NotFoundException('Job offer not found.');
+    if (!jobOffer.isActive) throw new NotFoundException('Job offer is not available.');
+
+    return this.buildCvImprovementPayload(userId, cvId, cv, jobOffer);
+  }
+
+  async getLatestCvImprovementForUser(userId: string, cvId: string) {
+    await this.assertCvOwnership(userId, cvId);
+
+    const result = await this.prisma.aIAnalysis.findFirst({
+      where: {
+        userId,
+        cvId,
+        type: AnalysisType.CV_IMPROVEMENT,
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    if (!result) {
+      throw new NotFoundException('No CV improvement found.');
+    }
+
+    return result;
+  }
+
+  async getCvImprovementHistoryForUser(userId: string, cvId: string) {
+    await this.assertCvOwnership(userId, cvId);
+
+    const result = await this.prisma.aIAnalysis.findMany({
+      where: {
+        userId,
+        cvId,
+        type: AnalysisType.CV_IMPROVEMENT,
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    return { data: result, meta: { total: result.length } };
   }
 
   async getLatestCvAnalysisForUser(userId: string, cvId: string) {

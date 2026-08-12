@@ -55,6 +55,13 @@ Tous les endpoints d’IA sont protégés par JWT.
 | GET | `/api/v1/ai/matching/:cvId/:jobOfferId` | JWT | Récupère le dernier matching enregistré |
 | GET | `/api/v1/ai/matching` | JWT | Liste les matchings d’un utilisateur |
 | GET | `/api/v1/ai/matching/cv/:cvId/top-jobs` | JWT | Classe les offres actives les plus pertinentes pour un CV |
+| POST | `/api/v1/ai/analyze/cv/:cvId` | JWT | Analyse un CV et stocke le résultat `CV_ANALYSIS` |
+| GET | `/api/v1/ai/analyze/cv/:cvId/latest` | JWT | Récupère la dernière analyse du CV |
+| GET | `/api/v1/ai/analyze/cv/:cvId/history` | JWT | Historique des analyses du CV |
+| POST | `/api/v1/ai/improve/cv/:cvId` | JWT | Génère des recommandations d’amélioration basées uniquement sur le CV |
+| POST | `/api/v1/ai/improve/cv/:cvId/job/:jobOfferId` | JWT | Génère des recommandations ciblées sur un poste précis |
+| GET | `/api/v1/ai/improve/cv/:cvId/latest` | JWT | Dernière recommandation d’amélioration du CV |
+| GET | `/api/v1/ai/improve/cv/:cvId/history` | JWT | Historique des recommandations d’amélioration |
 
 ### Exemple de body
 

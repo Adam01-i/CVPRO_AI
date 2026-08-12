@@ -61,4 +61,24 @@ export class AiController {
   getTopJobsForCv(@CurrentUser() user: JwtPayload, @Param('cvId') cvId: string) {
     return this.aiService.getTopJobsForCv(user.id, cvId);
   }
+
+  @Post('improve/cv/:cvId')
+  improveCv(@CurrentUser() user: JwtPayload, @Param('cvId') cvId: string) {
+    return this.aiService.improveCvForUser(user.id, cvId);
+  }
+
+  @Post('improve/cv/:cvId/job/:jobOfferId')
+  improveCvForJob(@CurrentUser() user: JwtPayload, @Param('cvId') cvId: string, @Param('jobOfferId') jobOfferId: string) {
+    return this.aiService.improveCvForUserWithJobOffer(user.id, cvId, jobOfferId);
+  }
+
+  @Get('improve/cv/:cvId/latest')
+  getLatestCvImprovement(@CurrentUser() user: JwtPayload, @Param('cvId') cvId: string) {
+    return this.aiService.getLatestCvImprovementForUser(user.id, cvId);
+  }
+
+  @Get('improve/cv/:cvId/history')
+  getCvImprovementHistory(@CurrentUser() user: JwtPayload, @Param('cvId') cvId: string) {
+    return this.aiService.getCvImprovementHistoryForUser(user.id, cvId);
+  }
 }
