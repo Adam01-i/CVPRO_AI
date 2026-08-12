@@ -45,4 +45,9 @@ export class QueryMatchingDto {
   limit?: number;
 }
 
+export class AnalyzeCvDto {
+  @IsUUID()
+  cvId!: string;
+}
+
 export class AnalyzeMatchingDto extends MatchCvDto {}

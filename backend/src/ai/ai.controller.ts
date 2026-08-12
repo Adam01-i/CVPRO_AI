@@ -23,6 +23,26 @@ export class AiController {
     return this.aiService.matchCvToJobOffer(user.id, dto.cvId, dto.jobOfferId);
   }
 
+  @Post('analyze/cv/:cvId')
+  analyzeCv(@CurrentUser() user: JwtPayload, @Param('cvId') cvId: string) {
+    return this.aiService.analyzeCvForUser(user.id, cvId);
+  }
+
+  @Get('analyze/cv/:cvId/latest')
+  getLatestCvAnalysis(@CurrentUser() user: JwtPayload, @Param('cvId') cvId: string) {
+    return this.aiService.getLatestCvAnalysisForUser(user.id, cvId);
+  }
+
+  @Get('analyze/cv/:cvId/history')
+  getCvAnalysisHistory(@CurrentUser() user: JwtPayload, @Param('cvId') cvId: string) {
+    return this.aiService.getCvAnalysisHistoryForUser(user.id, cvId);
+  }
+
+  @Get('analyze/:analysisId')
+  getCvAnalysisById(@CurrentUser() user: JwtPayload, @Param('analysisId') analysisId: string) {
+    return this.aiService.getCvAnalysisByIdForUser(user.id, analysisId);
+  }
+
   @Get('matching/:cvId/:jobOfferId')
   getMatching(
     @CurrentUser() user: JwtPayload,
