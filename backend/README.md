@@ -35,6 +35,27 @@ revoke previously issued access tokens; keep token lifetimes short (default:
 `1d`) and introduce server-side token versioning or a deny-list only if
 immediate revocation is required.
 
+## CV module
+
+All CV endpoints require `Authorization: Bearer <accessToken>` and only the
+owner may read or change a CV and its child resources. `POST /api/v1/cvs`
+creates a CV and makes it the user's sole active CV. `PATCH /api/v1/cvs/:id/activate`
+atomically changes the active CV.
+
+| Resource | Endpoints |
+| --- | --- |
+| CVs | `POST/GET /api/v1/cvs`, `GET/PATCH/DELETE /api/v1/cvs/:id`, `PATCH /api/v1/cvs/:id/activate` |
+| Experiences | `POST/GET /api/v1/cvs/:cvId/experiences`, `GET/PATCH/DELETE /api/v1/cvs/:cvId/experiences/:id` |
+| Educations, projects, certifications, languages | `POST/GET /api/v1/cvs/:cvId/{resource}`, `PATCH/DELETE /api/v1/cvs/:cvId/{resource}/:id` |
+| Skills | `POST/GET /api/v1/cvs/:cvId/skills`, `PATCH/DELETE /api/v1/cvs/:cvId/skills/:id` |
+
+To attach a skill, submit an existing `skillId`, or a `name` (and optional
+`category`) to create or reuse the shared skill. Example CV creation:
+
+```json
+{"title":"CV Développeur Full Stack","profession":"Développeur Full Stack","email":"adam@example.com"}
+```
+
 ## Project setup
 
 ```bash
