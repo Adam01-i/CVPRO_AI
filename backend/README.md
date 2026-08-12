@@ -56,6 +56,26 @@ To attach a skill, submit an existing `skillId`, or a `name` (and optional
 {"title":"CV Développeur Full Stack","profession":"Développeur Full Stack","email":"adam@example.com"}
 ```
 
+## Jobs module
+
+Public endpoints: `GET /api/v1/jobs/companies`, `GET /api/v1/jobs/companies/:id`,
+`GET /api/v1/jobs/offers`, and `GET /api/v1/jobs/offers/:id`. Offers support
+`search`, `location`, `remote`, `contractType`, `companyId`, `isActive`,
+`minSalary`, `maxSalary`, `page`, and `limit` (maximum 100).
+
+Company and offer management require an ADMIN Bearer token:
+
+| Resource | Endpoints |
+| --- | --- |
+| Companies | `POST /jobs/companies`, `PATCH/DELETE /jobs/companies/:id` |
+| Offers | `POST /jobs/offers`, `PATCH/DELETE /jobs/offers/:id`, `PATCH /jobs/offers/:id/status` |
+| Applications | `POST /jobs/offers/:id/apply`, `GET /jobs/applications/me`, `GET /jobs/applications/:id`, `PATCH /jobs/applications/:id/withdraw` |
+| Admin applications | `GET /jobs/offers/:id/applications`, `PATCH /jobs/applications/:id/status` |
+
+The effective paths are prefixed with `/api/v1`. Applying checks that the offer
+is active and not expired, the selected CV belongs to the caller, and no prior
+application exists. Offer skills are created and updated transactionally.
+
 ## Project setup
 
 ```bash

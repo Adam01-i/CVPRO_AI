@@ -1,0 +1,1 @@
+import { IsOptional, IsString, IsUUID, MaxLength } from 'class-validator'; export class CreateJobApplicationDto { @IsOptional() @IsUUID() cvId?: string; @IsOptional() @IsString() @MaxLength(10000) coverLetter?: string; }
