@@ -47,15 +47,23 @@ export class AuthService {
   }
 
   async login(loginDto: LoginDto): Promise<{ accessToken: string; user: SafeUser }> {
-    const user = await this.prisma.user.findUnique({
-      where: { email: loginDto.email.toLowerCase() },
-    });
+    console.log('[DEBUG] AuthService.login - email:', loginDto?.email);
+    try {
+      const user = await this.prisma.user.findUnique({
+        where: { email: loginDto.email.toLowerCase() },
+      });
 
-    if (!user || !(await bcrypt.compare(loginDto.password, user.passwordHash))) {
-      throw new UnauthorizedException('Invalid email or password.');
+      console.log('[DEBUG] AuthService.login - user found:', !!user);
+
+      if (!user || !(await bcrypt.compare(loginDto.password, user.passwordHash))) {
+        throw new UnauthorizedException('Invalid email or password.');
+      }
+
+      return this.buildAuthResponse(user);
+    } catch (err) {
+      console.error('[DEBUG] AuthService.login - error:', err);
+      throw err;
     }
-
-    return this.buildAuthResponse(user);
   }
 
   async changePassword(userId: string, dto: ChangePasswordDto): Promise<void> {

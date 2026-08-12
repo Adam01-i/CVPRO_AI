@@ -15,15 +15,18 @@ async function bootstrap() {
     }),
   );
 
-  const allowedOrigins = (process.env.CORS_ORIGINS ??
-    'http://localhost:3000,http://localhost:5173,http://localhost:4200')
+  const allowedOrigins = (process.env.CORS_ORIGINS ?? '')
     .split(',')
     .map((origin) => origin.trim())
     .filter(Boolean);
 
+  const allowAllOrigins = allowedOrigins.length === 0;
+
   app.enableCors({
     origin: (origin, callback) => {
-      if (!origin || allowedOrigins.includes(origin)) return callback(null, true);
+      if (!origin || allowAllOrigins || allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
       return callback(new Error('Origin not allowed by CORS'));
     },
     credentials: true,
