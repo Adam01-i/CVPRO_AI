@@ -1,0 +1,16 @@
+services:
+  postgres:
+    image: postgres:17
+    container_name: cvpro-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: cvpro_ai
+      POSTGRES_USER: cvpro
+      POSTGRES_PASSWORD: cvpro_password
+    ports:
+      - "5437:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:

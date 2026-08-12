@@ -1,0 +1,470 @@
+// ============================================================
+// CVPro-AI - Prisma Schema
+// ============================================================
+
+generator client {
+  provider     = "prisma-client"
+  output       = "../generated/prisma"
+  moduleFormat = "cjs"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ============================================================
+// ENUMS
+// ============================================================
+
+enum UserRole {
+  USER
+  ADMIN
+}
+
+enum ContractType {
+  CDI
+  CDD
+  STAGE
+  ALTERNANCE
+  FREELANCE
+  INTERIM
+  TEMPORARY
+  OTHER
+}
+
+enum ApplicationStatus {
+  DRAFT
+  APPLIED
+  UNDER_REVIEW
+  INTERVIEW
+  ACCEPTED
+  REJECTED
+  WITHDRAWN
+}
+
+enum AnalysisType {
+  CV_ANALYSIS
+  JOB_MATCHING
+  CV_IMPROVEMENT
+}
+
+enum AnalysisStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+enum SkillLevel {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+  EXPERT
+}
+
+enum EducationLevel {
+  BAC
+  BAC_PLUS_1
+  BAC_PLUS_2
+  BAC_PLUS_3
+  BAC_PLUS_4
+  BAC_PLUS_5
+  DOCTORATE
+  OTHER
+}
+
+// ============================================================
+// USER
+// ============================================================
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String
+  firstName    String
+  lastName     String
+  phone        String?
+  location     String?
+  profileImage String?
+  role         UserRole @default(USER)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  cvs          CV[]
+  applications JobApplication[]
+  analyses     AIAnalysis[]
+
+  @@map("users")
+}
+
+// ============================================================
+// CV
+// ============================================================
+
+model CV {
+  id     String @id @default(uuid())
+  userId String
+
+  title      String
+  summary    String?
+  profession String?
+  email      String?
+  phone      String?
+  address    String?
+  linkedin   String?
+  github     String?
+  portfolio  String?
+
+  isActive Boolean @default(true)
+  isPublic Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  user           User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  experiences    Experience[]
+  educations     Education[]
+  skills         CVSkill[]
+  projects       Project[]
+  certifications Certification[]
+  languages      Language[]
+  analyses       AIAnalysis[]
+  applications   JobApplication[]
+  matchings      JobMatching[]
+
+  @@index([userId])
+  @@map("cvs")
+}
+
+// ============================================================
+// PROFESSIONAL EXPERIENCE
+// ============================================================
+
+model Experience {
+  id   String @id @default(uuid())
+  cvId String
+
+  company     String
+  position    String
+  location    String?
+  description String?
+  startDate   DateTime
+  endDate     DateTime?
+  isCurrent   Boolean   @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  cv CV @relation(fields: [cvId], references: [id], onDelete: Cascade)
+
+  @@index([cvId])
+  @@map("experiences")
+}
+
+// ============================================================
+// EDUCATION
+// ============================================================
+
+model Education {
+  id   String @id @default(uuid())
+  cvId String
+
+  institution String
+  degree      String
+  field       String?
+  level       EducationLevel?
+  location    String?
+  description String?
+  startDate   DateTime
+  endDate     DateTime?
+  isCurrent   Boolean         @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  cv CV @relation(fields: [cvId], references: [id], onDelete: Cascade)
+
+  @@index([cvId])
+  @@map("educations")
+}
+
+// ============================================================
+// SKILL
+// ============================================================
+
+model Skill {
+  id       String  @id @default(uuid())
+  name     String  @unique
+  category String?
+
+  createdAt DateTime @default(now())
+
+  cvs       CVSkill[]
+  jobOffers JobOfferSkill[]
+
+  @@map("skills")
+}
+
+// ============================================================
+// CV <-> SKILL
+// ============================================================
+
+model CVSkill {
+  id      String     @id @default(uuid())
+  cvId    String
+  skillId String
+  level   SkillLevel @default(INTERMEDIATE)
+  years   Float?
+
+  cv    CV    @relation(fields: [cvId], references: [id], onDelete: Cascade)
+  skill Skill @relation(fields: [skillId], references: [id], onDelete: Cascade)
+
+  @@unique([cvId, skillId])
+  @@index([cvId])
+  @@index([skillId])
+  @@map("cv_skills")
+}
+
+// ============================================================
+// PROJECT
+// ============================================================
+
+model Project {
+  id   String @id @default(uuid())
+  cvId String
+
+  name         String
+  description  String?
+  url          String?
+  githubUrl    String?
+  technologies String?
+  startDate    DateTime?
+  endDate      DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  cv CV @relation(fields: [cvId], references: [id], onDelete: Cascade)
+
+  @@index([cvId])
+  @@map("projects")
+}
+
+// ============================================================
+// CERTIFICATION
+// ============================================================
+
+model Certification {
+  id   String @id @default(uuid())
+  cvId String
+
+  name           String
+  organization   String?
+  issueDate      DateTime?
+  expirationDate DateTime?
+  credentialId   String?
+  credentialUrl  String?
+
+  createdAt DateTime @default(now())
+
+  cv CV @relation(fields: [cvId], references: [id], onDelete: Cascade)
+
+  @@index([cvId])
+  @@map("certifications")
+}
+
+// ============================================================
+// LANGUAGE
+// ============================================================
+
+model Language {
+  id   String @id @default(uuid())
+  cvId String
+
+  name  String
+  level String?
+
+  createdAt DateTime @default(now())
+
+  cv CV @relation(fields: [cvId], references: [id], onDelete: Cascade)
+
+  @@index([cvId])
+  @@map("languages")
+}
+
+// ============================================================
+// COMPANY
+// ============================================================
+
+model Company {
+  id String @id @default(uuid())
+
+  name        String  @unique
+  description String?
+  website     String?
+  location    String?
+  logoUrl     String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  jobOffers JobOffer[]
+
+  @@map("companies")
+}
+
+// ============================================================
+// JOB OFFER
+// ============================================================
+
+model JobOffer {
+  id        String  @id @default(uuid())
+  companyId String?
+
+  title        String
+  description  String
+  location     String?
+  remote       Boolean       @default(false)
+  contractType ContractType?
+  salaryMin    Float?
+  salaryMax    Float?
+  currency     String?       @default("XOF")
+
+  requirements     String?
+  responsibilities String?
+
+  applicationUrl String?
+  isActive       Boolean @default(true)
+
+  publishedAt DateTime?
+  deadline    DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  company      Company?         @relation(fields: [companyId], references: [id], onDelete: SetNull)
+  skills       JobOfferSkill[]
+  applications JobApplication[]
+  matchings    JobMatching[]
+
+  @@index([companyId])
+  @@index([isActive])
+  @@map("job_offers")
+}
+
+// ============================================================
+// JOB OFFER <-> SKILL
+// ============================================================
+
+model JobOfferSkill {
+  id         String  @id @default(uuid())
+  jobOfferId String
+  skillId    String
+  required   Boolean @default(true)
+
+  jobOffer JobOffer @relation(fields: [jobOfferId], references: [id], onDelete: Cascade)
+  skill    Skill    @relation(fields: [skillId], references: [id], onDelete: Cascade)
+
+  @@unique([jobOfferId, skillId])
+  @@index([jobOfferId])
+  @@index([skillId])
+  @@map("job_offer_skills")
+}
+
+// ============================================================
+// JOB APPLICATION
+// ============================================================
+
+model JobApplication {
+  id         String  @id @default(uuid())
+  userId     String
+  cvId       String?
+  jobOfferId String
+
+  status      ApplicationStatus @default(DRAFT)
+  coverLetter String?
+  appliedAt   DateTime?
+  notes       String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  cv       CV?      @relation(fields: [cvId], references: [id], onDelete: SetNull)
+  jobOffer JobOffer @relation(fields: [jobOfferId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, jobOfferId])
+  @@index([userId])
+  @@index([jobOfferId])
+  @@map("job_applications")
+}
+
+// ============================================================
+// AI ANALYSIS
+// ============================================================
+
+model AIAnalysis {
+  id     String @id @default(uuid())
+  userId String
+  cvId   String
+
+  type   AnalysisType
+  status AnalysisStatus @default(PENDING)
+
+  score           Float?
+  overallFeedback String?
+  strengths       Json?
+  weaknesses      Json?
+  recommendations Json?
+  extractedData   Json?
+  rawResponse     Json?
+
+  model          String?
+  processingTime Int?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  cv   CV   @relation(fields: [cvId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([cvId])
+  @@index([type])
+  @@map("ai_analyses")
+}
+
+// ============================================================
+// CV <-> JOB OFFER MATCHING
+// ============================================================
+
+model JobMatching {
+  id         String @id @default(uuid())
+  cvId       String
+  jobOfferId String
+
+  score           Float
+  skillsScore     Float?
+  experienceScore Float?
+  educationScore  Float?
+  semanticScore   Float?
+
+  matchedSkills Json?
+  missingSkills Json?
+  explanation   String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  cv       CV       @relation(fields: [cvId], references: [id], onDelete: Cascade)
+  jobOffer JobOffer @relation(fields: [jobOfferId], references: [id], onDelete: Cascade)
+
+  @@unique([cvId, jobOfferId])
+  @@index([cvId])
+  @@index([jobOfferId])
+  @@index([score])
+  @@map("job_matchings")
+}
