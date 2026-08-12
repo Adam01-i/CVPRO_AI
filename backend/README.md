@@ -25,6 +25,16 @@
 
 [Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
 
+## Authentication
+
+The API exposes `POST /api/v1/auth/register`, `POST /api/v1/auth/login`,
+`GET /api/v1/auth/me`, and `POST /api/v1/auth/change-password`. Protected
+routes expect `Authorization: Bearer <accessToken>`. Access tokens are stateless:
+the frontend logs out by removing its stored token. A password change does not
+revoke previously issued access tokens; keep token lifetimes short (default:
+`1d`) and introduce server-side token versioning or a deny-list only if
+immediate revocation is required.
+
 ## Project setup
 
 ```bash
