@@ -1,149 +1,133 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# CVPro-AI Backend
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+## Matching CV ↔ Offre d'emploi
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+Le module d’IA du backend compare un CV et une offre d’emploi de manière déterministe, sécurisée et explicable. Il ne se contente pas d’un score aléatoire : il combine des éléments métier réels du profil candidat et de l’offre.
 
-## Description
+### Formule de score
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+Le score final est calculé ainsi :
 
-## Authentication
+- Skills : 40%
+- Experience : 25%
+- Education : 15%
+- Semantic/Profile : 20%
 
-The API exposes `POST /api/v1/auth/register`, `POST /api/v1/auth/login`,
-`GET /api/v1/auth/me`, and `POST /api/v1/auth/change-password`. Protected
-routes expect `Authorization: Bearer <accessToken>`. Access tokens are stateless:
-the frontend logs out by removing its stored token. A password change does not
-revoke previously issued access tokens; keep token lifetimes short (default:
-`1d`) and introduce server-side token versioning or a deny-list only if
-immediate revocation is required.
+$$
+score = skillsScore \times 0.40 + experienceScore \times 0.25 + educationScore \times 0.15 + semanticScore \times 0.20
+$$
 
-## CV module
+Le résultat est arrondi et forcé dans l’intervalle 0–100.
 
-All CV endpoints require `Authorization: Bearer <accessToken>` and only the
-owner may read or change a CV and its child resources. `POST /api/v1/cvs`
-creates a CV and makes it the user's sole active CV. `PATCH /api/v1/cvs/:id/activate`
-atomically changes the active CV.
+### Principe
 
-| Resource | Endpoints |
-| --- | --- |
-| CVs | `POST/GET /api/v1/cvs`, `GET/PATCH/DELETE /api/v1/cvs/:id`, `PATCH /api/v1/cvs/:id/activate` |
-| Experiences | `POST/GET /api/v1/cvs/:cvId/experiences`, `GET/PATCH/DELETE /api/v1/cvs/:cvId/experiences/:id` |
-| Educations, projects, certifications, languages | `POST/GET /api/v1/cvs/:cvId/{resource}`, `PATCH/DELETE /api/v1/cvs/:cvId/{resource}/:id` |
-| Skills | `POST/GET /api/v1/cvs/:cvId/skills`, `PATCH/DELETE /api/v1/cvs/:cvId/skills/:id` |
+Le matching se base sur :
 
-To attach a skill, submit an existing `skillId`, or a `name` (and optional
-`category`) to create or reuse the shared skill. Example CV creation:
+- compétences CV vs compétences de l’offre ;
+- années et pertinence d’expérience professionnelle ;
+- niveau d’études et exigence métier ;
+- similarité lexicale / profil entre le résumé, les projets, les compétences et la description d’offre ;
+- génération d’une explication et de recommandations personnalisées.
+
+Le modèle Prisma `JobMatching` est utilisé pour stocker le résultat de manière idempotente :
+
+- `cvId`
+- `jobOfferId`
+- `score`
+- `skillsScore`
+- `experienceScore`
+- `educationScore`
+- `semanticScore`
+- `matchedSkills`
+- `missingSkills`
+- `explanation`
+- `createdAt` / `updatedAt`
+
+La clé unique `@@unique([cvId, jobOfferId])` évite les doublons grâce à `upsert`.
+
+## Endpoints
+
+Tous les endpoints d’IA sont protégés par JWT.
+
+| Méthode | Endpoint | Auth | Fonction |
+| --- | --- | --- | --- |
+| POST | `/api/v1/ai/matching` | JWT | Calcule et enregistre un matching CV ↔ offre |
+| GET | `/api/v1/ai/matching/:cvId/:jobOfferId` | JWT | Récupère le dernier matching enregistré |
+| GET | `/api/v1/ai/matching` | JWT | Liste les matchings d’un utilisateur |
+| GET | `/api/v1/ai/matching/cv/:cvId/top-jobs` | JWT | Classe les offres actives les plus pertinentes pour un CV |
+
+### Exemple de body
 
 ```json
-{"title":"CV Développeur Full Stack","profession":"Développeur Full Stack","email":"adam@example.com"}
+{
+  "cvId": "f1e6a273-7b4b-4de0-a5f1-c3e819c1afdb",
+  "jobOfferId": "5d54c157-b8db-4424-b3a9-e6f9d44e1bc8"
+}
 ```
 
-## Jobs module
+### Exemple de réponse
 
-Public endpoints: `GET /api/v1/jobs/companies`, `GET /api/v1/jobs/companies/:id`,
-`GET /api/v1/jobs/offers`, and `GET /api/v1/jobs/offers/:id`. Offers support
-`search`, `location`, `remote`, `contractType`, `companyId`, `isActive`,
-`minSalary`, `maxSalary`, `page`, and `limit` (maximum 100).
+```json
+{
+  "id": "0f4e8bb5-058d-4d14-8e5d-5dce4e3f0a2d",
+  "cvId": "f1e6a273-7b4b-4de0-a5f1-c3e819c1afdb",
+  "jobOfferId": "5d54c157-b8db-4424-b3a9-e6f9d44e1bc8",
+  "score": 82,
+  "skillsScore": 90,
+  "experienceScore": 80,
+  "educationScore": 75,
+  "semanticScore": 82,
+  "matchedSkills": ["Java", "Spring Boot", "PostgreSQL", "Docker"],
+  "missingSkills": ["Kubernetes"],
+  "explanation": "Le profil correspond fortement à l’offre. Les compétences Java, Spring Boot et PostgreSQL sont bien présentes et l’expérience est cohérente avec le poste. Kubernetes reste la compétence manquante la plus notable.",
+  "recommendations": [
+    "Ajouter Kubernetes dans vos compétences si vous avez déjà utilisé cette technologie.",
+    "Mettre davantage en avant vos expériences backend.",
+    "Préciser votre niveau d’expérience avec Spring Boot."
+  ]
+}
+```
 
-Company and offer management require an ADMIN Bearer token:
+## Sécurité
 
-| Resource | Endpoints |
-| --- | --- |
-| Companies | `POST /jobs/companies`, `PATCH/DELETE /jobs/companies/:id` |
-| Offers | `POST /jobs/offers`, `PATCH/DELETE /jobs/offers/:id`, `PATCH /jobs/offers/:id/status` |
-| Applications | `POST /jobs/offers/:id/apply`, `GET /jobs/applications/me`, `GET /jobs/applications/:id`, `PATCH /jobs/applications/:id/withdraw` |
-| Admin applications | `GET /jobs/offers/:id/applications`, `PATCH /jobs/applications/:id/status` |
+Le matching applique les règles suivantes :
 
-The effective paths are prefixed with `/api/v1`. Applying checks that the offer
-is active and not expired, the selected CV belongs to the caller, and no prior
-application exists. Offer skills are created and updated transactionally.
+- le `userId` est toujours extrait du JWT et jamais du body ;
+- l’utilisateur doit être authentifié ;
+- le CV doit exister ;
+- le CV doit appartenir à l’utilisateur connecté ;
+- l’offre doit exister et être active ;
+- si le CV appartient à un autre utilisateur, le service renvoie `403 Forbidden` ;
+- si le CV ou l’offre est introuvable, le service renvoie `404 Not Found` ;
+- aucune donnée sensible comme `passwordHash` n’est exposée.
 
-## Project setup
+## Architecture
+
+Le module `src/ai` contient :
+
+- `ai.controller.ts` : endpoints REST ;
+- `ai.service.ts` : logique métier, scoring, sécurité, stockage ;
+- `dto/match-cv.dto.ts` : validation UUID ;
+- `SemanticMatcher` : abstraction pour remplacer le matching lexique local par un système embeddings/LLM plus tard.
+
+L’architecture est pensée pour évoluer sans couplage fort vers un fournisseur d’IA. Une implémentation concrète peut remplacer `LocalSemanticMatcher` par un service basé sur OpenAI, embeddings ou un vecteur database sans réécrire les endpoints ni la persistance.
+
+## Développement et validation
 
 ```bash
-$ npm install
+npm install
+npx prisma generate
+npm test -- --runInBand
+npm run build
 ```
 
-## Compile and run the project
+## Évolution future
 
-```bash
-# development
-$ npm run start
+Le moteur local actuel est déterministe et compatible avec les contraintes de production. Il peut évoluer vers :
 
-# watch mode
-$ npm run start:dev
+- OpenAI / LLM pour l’analyse qualitative du CV ;
+- embeddings pour la similarité sémantique ;
+- vector database pour le ranking des offres ;
+- RAG sur les offres, compétences et historique candidat.
 
-# production mode
-$ npm run start:prod
-```
-
-## Run tests
-
-```bash
-# unit tests
-$ npm run test
-
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
-```
-
-## Deployment
-
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
-
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
-
-```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
-```
-
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
-
-## Resources
-
-Check out a few resources that may come in handy when working with NestJS:
-
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
-
-## Support
-
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
-
-## Stay in touch
-
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
-
-## License
-
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+La logique métiers reste stable, tandis que le composant de similarité sémantique peut être remplacé sans modifier l’API publique.
