@@ -16,6 +16,10 @@ import { UpdateExperienceDto } from './dto/update-experience.dto';
 import { UpdateLanguageDto } from './dto/update-language.dto';
 import { UpdateProjectDto } from './dto/update-project.dto';
 import { UpdateSkillDto } from './dto/update-skill.dto';
+import { CreateCvPhoneDto } from './dto/create-cv-phone.dto';
+import { UpdateCvPhoneDto } from './dto/update-cv-phone.dto';
+import { CreateCvLinkDto } from './dto/create-cv-link.dto';
+import { UpdateCvLinkDto } from './dto/update-cv-link.dto';
 import { CvsService } from './cvs.service';
 
 @UseGuards(JwtAuthGuard)
@@ -62,14 +66,14 @@ export class CvsController {
   @HttpCode(HttpStatus.NO_CONTENT) @Delete(':cvId/languages/:id') async removeLanguage(@CurrentUser() user: JwtPayload, @Param('cvId') cvId: string, @Param('id') id: string) { await this.cvsService.removeLanguage(user.id, cvId, id); }
 
   // Phones
-  @Post(':cvId/phones') createPhone(@CurrentUser() user: JwtPayload, @Param('cvId') cvId: string, @Body() dto: any) { return this.cvsService.createPhone(user.id, cvId, dto); }
+  @Post(':cvId/phones') createPhone(@CurrentUser() user: JwtPayload, @Param('cvId') cvId: string, @Body() dto: CreateCvPhoneDto) { return this.cvsService.createPhone(user.id, cvId, dto); }
   @Get(':cvId/phones') listPhones(@CurrentUser() user: JwtPayload, @Param('cvId') cvId: string) { return this.cvsService.listPhones(user.id, cvId); }
-  @Patch(':cvId/phones/:id') updatePhone(@CurrentUser() user: JwtPayload, @Param('cvId') cvId: string, @Param('id') id: string, @Body() dto: any) { return this.cvsService.updatePhone(user.id, cvId, id, dto); }
+  @Patch(':cvId/phones/:id') updatePhone(@CurrentUser() user: JwtPayload, @Param('cvId') cvId: string, @Param('id') id: string, @Body() dto: UpdateCvPhoneDto) { return this.cvsService.updatePhone(user.id, cvId, id, dto); }
   @HttpCode(HttpStatus.NO_CONTENT) @Delete(':cvId/phones/:id') async removePhone(@CurrentUser() user: JwtPayload, @Param('cvId') cvId: string, @Param('id') id: string) { await this.cvsService.removePhone(user.id, cvId, id); }
 
   // Links
-  @Post(':cvId/links') createLink(@CurrentUser() user: JwtPayload, @Param('cvId') cvId: string, @Body() dto: any) { return this.cvsService.createLink(user.id, cvId, dto); }
+  @Post(':cvId/links') createLink(@CurrentUser() user: JwtPayload, @Param('cvId') cvId: string, @Body() dto: CreateCvLinkDto) { return this.cvsService.createLink(user.id, cvId, dto); }
   @Get(':cvId/links') listLinks(@CurrentUser() user: JwtPayload, @Param('cvId') cvId: string) { return this.cvsService.listLinks(user.id, cvId); }
-  @Patch(':cvId/links/:id') updateLink(@CurrentUser() user: JwtPayload, @Param('cvId') cvId: string, @Param('id') id: string, @Body() dto: any) { return this.cvsService.updateLink(user.id, cvId, id, dto); }
+  @Patch(':cvId/links/:id') updateLink(@CurrentUser() user: JwtPayload, @Param('cvId') cvId: string, @Param('id') id: string, @Body() dto: UpdateCvLinkDto) { return this.cvsService.updateLink(user.id, cvId, id, dto); }
   @HttpCode(HttpStatus.NO_CONTENT) @Delete(':cvId/links/:id') async removeLink(@CurrentUser() user: JwtPayload, @Param('cvId') cvId: string, @Param('id') id: string) { await this.cvsService.removeLink(user.id, cvId, id); }
 }
