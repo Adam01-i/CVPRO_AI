@@ -24,11 +24,9 @@ export function CvPreview({ cv, userName }: { cv: Partial<Cv>; userName: string 
 
         <div className="mt-6 flex flex-wrap gap-2 text-xs text-slate-600">
           {cv.email ? <span className="rounded-full bg-white px-2.5 py-1">{cv.email}</span> : null}
-          {cv.phone ? <span className="rounded-full bg-white px-2.5 py-1">{cv.phone}</span> : null}
-          {cv.address ? <span className="rounded-full bg-white px-2.5 py-1">{cv.address}</span> : null}
-          {cv.linkedin ? <span className="rounded-full bg-white px-2.5 py-1">LinkedIn</span> : null}
-          {cv.github ? <span className="rounded-full bg-white px-2.5 py-1">GitHub</span> : null}
-          {cv.portfolio ? <span className="rounded-full bg-white px-2.5 py-1">Portfolio</span> : null}
+          {(cv.phones && cv.phones.length > 0) ? (cv.phones as any[]).map((p) => <span key={p.id} className="rounded-full bg-white px-2.5 py-1">{p.number}</span>) : (cv.phone ? <span className="rounded-full bg-white px-2.5 py-1">{cv.phone}</span> : null)}
+          {(cv.addressLine || cv.city) ? <span className="rounded-full bg-white px-2.5 py-1">{[cv.addressLine, cv.postalCode, cv.city].filter(Boolean).join(' · ')}</span> : null}
+          {(cv.links && cv.links.length > 0) ? (cv.links as any[]).map((l) => <span key={l.id} className="rounded-full bg-white px-2.5 py-1">{l.type}</span>) : null}
         </div>
 
         <div className="mt-8 space-y-8">

@@ -111,11 +111,22 @@ model CV {
   summary    String?
   profession String?
   email      String?
+  // Legacy single-field contact info (kept for backward compatibility)
   phone      String?
   address    String?
   linkedin   String?
   github     String?
   portfolio  String?
+
+  // Structured / new contact fields
+  addressLine String?
+  postalCode  String?
+  city        String?
+  country     String?
+
+  // Relations for multiple phones and links
+  phones CVPhone[]
+  links  CVLink[]
 
   isActive Boolean @default(true)
   isPublic Boolean @default(false)
@@ -137,6 +148,57 @@ model CV {
 
   @@index([userId])
   @@map("cvs")
+}
+
+// ============================================================
+// CV PHONE
+// ============================================================
+
+model CVPhone {
+  id     String @id @default(uuid())
+  cvId   String
+
+  label  String? // e.g., "Mobile", "Pro", "Domicile"
+  number String
+  primary Boolean @default(false)
+
+  createdAt DateTime @default(now())
+
+  cv CV @relation(fields: [cvId], references: [id], onDelete: Cascade)
+
+  @@index([cvId])
+  @@map("cv_phones")
+}
+
+// ============================================================
+// CV LINK
+// ============================================================
+
+enum LinkType {
+  LINKEDIN
+  GITHUB
+  PORTFOLIO
+  PERSONAL
+  BEHANCE
+  DRIBBBLE
+  TWITTER
+  OTHER
+}
+
+model CVLink {
+  id     String @id @default(uuid())
+  cvId   String
+
+  type  LinkType
+  label String? // when type = OTHER
+  url   String
+
+  createdAt DateTime @default(now())
+
+  cv CV @relation(fields: [cvId], references: [id], onDelete: Cascade)
+
+  @@index([cvId])
+  @@map("cv_links")
 }
 
 // ============================================================

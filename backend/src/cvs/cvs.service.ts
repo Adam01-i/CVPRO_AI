@@ -1,5 +1,5 @@
 import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
-import { Certification, Education, Experience, Language, Prisma, Project, SkillLevel, CVSkill } from '../../generated/prisma/client';
+import { Certification, CVLink, CVPhone, Education, Experience, Language, Prisma, Project, SkillLevel, CVSkill } from '../../generated/prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateCertificationDto } from './dto/create-certification.dto';
 import { CreateCvDto } from './dto/create-cv.dto';
@@ -137,6 +137,24 @@ export class CvsService {
   async updateLanguage(userId: string, cvId: string, id: string, dto: UpdateLanguageDto) { await this.findChild<Language>('language', cvId, id, userId); return this.prisma.language.update({ where: { id }, data: dto }); }
   async removeLanguage(userId: string, cvId: string, id: string): Promise<void> { await this.findChild<Language>('language', cvId, id, userId); await this.prisma.language.delete({ where: { id } }); }
 
+  // Phones
+  async createPhone(userId: string, cvId: string, dto: any) {
+    await this.findOwnedCv(userId, cvId);
+    return this.prisma.cVPhone.create({ data: { ...dto, cvId } });
+  }
+  async listPhones(userId: string, cvId: string) { await this.findOwnedCv(userId, cvId); return this.prisma.cVPhone.findMany({ where: { cvId }, orderBy: { createdAt: 'desc' } }); }
+  async updatePhone(userId: string, cvId: string, id: string, dto: any) { await this.findChild<CVPhone>('cVPhone', cvId, id, userId); return this.prisma.cVPhone.update({ where: { id }, data: dto }); }
+  async removePhone(userId: string, cvId: string, id: string): Promise<void> { await this.findChild<CVPhone>('cVPhone', cvId, id, userId); await this.prisma.cVPhone.delete({ where: { id } }); }
+
+  // Links
+  async createLink(userId: string, cvId: string, dto: any) {
+    await this.findOwnedCv(userId, cvId);
+    return this.prisma.cVLink.create({ data: { ...dto, cvId } });
+  }
+  async listLinks(userId: string, cvId: string) { await this.findOwnedCv(userId, cvId); return this.prisma.cVLink.findMany({ where: { cvId }, orderBy: { createdAt: 'desc' } }); }
+  async updateLink(userId: string, cvId: string, id: string, dto: any) { await this.findChild<CVLink>('cVLink', cvId, id, userId); return this.prisma.cVLink.update({ where: { id }, data: dto }); }
+  async removeLink(userId: string, cvId: string, id: string): Promise<void> { await this.findChild<CVLink>('cVLink', cvId, id, userId); await this.prisma.cVLink.delete({ where: { id } }); }
+
   private async findOwnedCv(userId: string, id: string) {
     const cv = await this.prisma.cV.findUnique({ where: { id } });
     if (!cv) throw new NotFoundException('CV not found.');
@@ -144,7 +162,7 @@ export class CvsService {
     return cv;
   }
 
-  private async findChild<T>(model: 'experience' | 'education' | 'cVSkill' | 'project' | 'certification' | 'language', cvId: string, id: string, userId?: string): Promise<T> {
+  private async findChild<T>(model: 'experience' | 'education' | 'cVSkill' | 'project' | 'certification' | 'language' | 'cVPhone' | 'cVLink', cvId: string, id: string, userId?: string): Promise<T> {
     if (userId) await this.findOwnedCv(userId, cvId);
     const delegate = this.prisma[model] as unknown as { findFirst(args: { where: { id: string; cvId: string } }): Promise<T | null> };
     const record = await delegate.findFirst({ where: { id, cvId } });

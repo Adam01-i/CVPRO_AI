@@ -56,6 +56,8 @@ export function CvEditor({ cvId }: { cvId?: string }) {
   const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [error, setError] = useState<string | null>(null);
   const [currentStep, setCurrentStep] = useState<number>(0);
+  const [phonesState, setPhonesState] = useState<any[]>([]);
+  const [linksState, setLinksState] = useState<any[]>([]);
 
   const stepList = useMemo(
     () => [
@@ -75,38 +77,77 @@ export function CvEditor({ cvId }: { cvId?: string }) {
   const userName = useMemo(() => `${user?.firstName ?? ''} ${user?.lastName ?? ''}`.trim() || 'Votre profil', [user]);
 
   const fetchCv = async () => {
-    if (!token || !cvId) return;
+    if (token && cvId) {
+      try {
+        const nextCv = await cvsApi.getById(token, cvId);
+        setCv(nextCv);
+        setDraft({
+          title: nextCv.title ?? '',
+          profession: nextCv.profession ?? '',
+          summary: nextCv.summary ?? '',
+          email: nextCv.email ?? '',
+          phone: nextCv.phone ?? '',
+          address: nextCv.address ?? '',
+          linkedin: nextCv.linkedin ?? '',
+          github: nextCv.github ?? '',
+          portfolio: nextCv.portfolio ?? '',
+          addressLine: nextCv.addressLine ?? '',
+          postalCode: nextCv.postalCode ?? '',
+          city: nextCv.city ?? '',
+          country: nextCv.country ?? '',
+          isActive: Boolean(nextCv.isActive),
+        });
+        setExperiences(nextCv.experiences ?? []);
+        setEducations(nextCv.educations ?? []);
+        setSkills(nextCv.skills ?? []);
+        setProjects(nextCv.projects ?? []);
+        setCertifications(nextCv.certifications ?? []);
+        setLanguages(nextCv.languages ?? []);
+        // load phones & links
+        const phones = await cvsApi.listPhones(token, cvId);
+        const links = await cvsApi.listLinks(token, cvId);
+        setPhonesState(phones ?? []);
+        setLinksState(links ?? []);
+        setAnalysis(null);
+        setImprovement(null);
+      } catch {
+        setError('Impossible de charger ce CV.');
+      }
+      return;
+    }
 
+    // visitor / local draft
     try {
-      const nextCv = await cvsApi.getById(token, cvId);
-      setCv(nextCv);
-      setDraft({
-        title: nextCv.title ?? '',
-        profession: nextCv.profession ?? '',
-        summary: nextCv.summary ?? '',
-        email: nextCv.email ?? '',
-        phone: nextCv.phone ?? '',
-        address: nextCv.address ?? '',
-        linkedin: nextCv.linkedin ?? '',
-        github: nextCv.github ?? '',
-        portfolio: nextCv.portfolio ?? '',
-        isActive: Boolean(nextCv.isActive),
-      });
-      setExperiences(nextCv.experiences ?? []);
-      setEducations(nextCv.educations ?? []);
-      setSkills(nextCv.skills ?? []);
-      setProjects(nextCv.projects ?? []);
-      setCertifications(nextCv.certifications ?? []);
-      setLanguages(nextCv.languages ?? []);
-      setAnalysis(null);
-      setImprovement(null);
-    } catch {
-      setError('Impossible de charger ce CV.');
+      const saved = localStorage.getItem(cvId ? `cv:draft:${cvId}` : 'cv:draft:local');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        setDraft((prev) => ({ ...prev, ...parsed.draft }));
+        setExperiences(parsed.experiences ?? []);
+        setEducations(parsed.educations ?? []);
+        setSkills(parsed.skills ?? []);
+        setProjects(parsed.projects ?? []);
+        setCertifications(parsed.certifications ?? []);
+        setLanguages(parsed.languages ?? []);
+        setPhonesState(parsed.phones ?? []);
+        setLinksState(parsed.links ?? []);
+      } else {
+        setDraft(emptyCvBase);
+        setExperiences([]);
+        setEducations([]);
+        setSkills([]);
+        setProjects([]);
+        setCertifications([]);
+        setLanguages([]);
+        setPhonesState([]);
+        setLinksState([]);
+      }
+    } catch (e) {
+      console.error(e);
     }
   };
 
   useEffect(() => {
-    if (!token) return;
+    // If user is authenticated, save server-side. Otherwise persist locally.
     if (cvId) {
       void fetchCv();
       return;
@@ -136,6 +177,10 @@ export function CvEditor({ cvId }: { cvId?: string }) {
       linkedin: String(draft.linkedin ?? '').trim() || undefined,
       github: String(draft.github ?? '').trim() || undefined,
       portfolio: String(draft.portfolio ?? '').trim() || undefined,
+      addressLine: String(draft.addressLine ?? '').trim() || undefined,
+      postalCode: String(draft.postalCode ?? '').trim() || undefined,
+      city: String(draft.city ?? '').trim() || undefined,
+      country: String(draft.country ?? '').trim() || undefined,
     };
 
     if (!payload.title) {
@@ -147,23 +192,29 @@ export function CvEditor({ cvId }: { cvId?: string }) {
     setError(null);
 
     try {
-      if (cvId) {
-        const updated = await cvsApi.update(token, cvId, payload);
-        setCv(updated);
+      if (token) {
+        if (cvId) {
+          const updated = await cvsApi.update(token, cvId, payload);
+          setCv(updated);
+        } else {
+          const created = await cvsApi.create(token, payload);
+          router.replace(`/dashboard/cvs/${created.id}`);
+        }
       } else {
-        const created = await cvsApi.create(token, payload);
-        router.replace(`/dashboard/cvs/${created.id}`);
+        // save draft locally
+        const key = cvId ? `cv:draft:${cvId}` : 'cv:draft:local';
+        const toSave = { draft: payload, experiences, educations, skills, projects, certifications, languages, phones: phonesState, links: linksState };
+        localStorage.setItem(key, JSON.stringify(toSave));
       }
       setSaveState('saved');
-    } catch {
+    } catch (e) {
+      console.error(e);
       setSaveState('error');
       setError('La sauvegarde a échoué. Vérifiez les informations saisies.');
     }
   };
 
   useEffect(() => {
-    if (!token) return;
-
     const hasDraftContent = Object.values(draft).some((value) => typeof value === 'string' ? value.trim().length > 0 : Boolean(value));
     if (!hasDraftContent) return;
 
@@ -174,10 +225,10 @@ export function CvEditor({ cvId }: { cvId?: string }) {
     }, 900);
 
     return () => clearTimeout(timer);
-  }, [token, cvId, draft]);
+  }, [cvId, draft, experiences, educations, skills, projects, certifications, languages, phonesState, linksState, token]);
 
   const resetSectionState = async () => {
-    if (cvId) await fetchCv();
+    await fetchCv();
   };
 
   const activate = async () => {
@@ -203,6 +254,48 @@ export function CvEditor({ cvId }: { cvId?: string }) {
     await cvsApi.createExperience(token, cvId, payload as any);
     event.currentTarget.reset();
     await resetSectionState();
+  };
+
+  // Phones (visitor or authenticated)
+  const addPhone = async (payload: { label?: string; number: string; primary?: boolean }) => {
+    if (token && cvId) {
+      await cvsApi.createPhone(token, cvId, payload as any);
+      const phones = await cvsApi.listPhones(token, cvId);
+      setPhonesState(phones ?? []);
+    } else {
+      setPhonesState((prev) => [{ id: `local-${Date.now()}`, ...payload, createdAt: new Date().toISOString() }, ...prev]);
+    }
+  };
+
+  const removePhoneLocal = async (id: string) => {
+    if (token && cvId && !id.startsWith('local-')) {
+      await cvsApi.removePhone(token, cvId, id);
+      const phones = await cvsApi.listPhones(token, cvId);
+      setPhonesState(phones ?? []);
+    } else {
+      setPhonesState((prev) => prev.filter((p) => p.id !== id));
+    }
+  };
+
+  // Links
+  const addLink = async (payload: { type: string; label?: string; url: string }) => {
+    if (token && cvId) {
+      await cvsApi.createLink(token, cvId, payload as any);
+      const links = await cvsApi.listLinks(token, cvId);
+      setLinksState(links ?? []);
+    } else {
+      setLinksState((prev) => [{ id: `local-${Date.now()}`, ...payload, createdAt: new Date().toISOString() }, ...prev]);
+    }
+  };
+
+  const removeLinkLocal = async (id: string) => {
+    if (token && cvId && !id.startsWith('local-')) {
+      await cvsApi.removeLink(token, cvId, id);
+      const links = await cvsApi.listLinks(token, cvId);
+      setLinksState(links ?? []);
+    } else {
+      setLinksState((prev) => prev.filter((p) => p.id !== id));
+    }
   };
 
   const createEducation = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -366,26 +459,62 @@ export function CvEditor({ cvId }: { cvId?: string }) {
                 Email
                 <input value={String(draft.email ?? '')} onChange={(e) => setDraft((prev) => ({ ...prev, email: e.target.value }))} className="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-slate-900 outline-none transition focus:border-slate-400 focus:bg-white" placeholder={user?.email ?? 'email@exemple.com'} />
               </label>
-              <label className="grid gap-2 text-sm font-medium text-slate-700">
-                Téléphone
-                <input value={String(draft.phone ?? '')} onChange={(e) => setDraft((prev) => ({ ...prev, phone: e.target.value }))} className="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-slate-900 outline-none transition focus:border-slate-400 focus:bg-white" placeholder="+33 6 12 34 56 78" />
-              </label>
-              <label className="grid gap-2 text-sm font-medium text-slate-700 md:col-span-2">
-                Adresse
-                <input value={String(draft.address ?? '')} onChange={(e) => setDraft((prev) => ({ ...prev, address: e.target.value }))} className="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-slate-900 outline-none transition focus:border-slate-400 focus:bg-white" placeholder="Adresse, ville, code postal" />
-              </label>
-              <label className="grid gap-2 text-sm font-medium text-slate-700">
-                LinkedIn
-                <input value={String(draft.linkedin ?? '')} onChange={(e) => setDraft((prev) => ({ ...prev, linkedin: e.target.value }))} className="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-slate-900 outline-none transition focus:border-slate-400 focus:bg-white" placeholder="https://linkedin.com/in/nom" />
-              </label>
-              <label className="grid gap-2 text-sm font-medium text-slate-700">
-                GitHub
-                <input value={String(draft.github ?? '')} onChange={(e) => setDraft((prev) => ({ ...prev, github: e.target.value }))} className="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-slate-900 outline-none transition focus:border-slate-400 focus:bg-white" placeholder="https://github.com/nom" />
-              </label>
-              <label className="grid gap-2 text-sm font-medium text-slate-700 md:col-span-2">
-                Portfolio
-                <input value={String(draft.portfolio ?? '')} onChange={(e) => setDraft((prev) => ({ ...prev, portfolio: e.target.value }))} className="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-slate-900 outline-none transition focus:border-slate-400 focus:bg-white" placeholder="https://portfolio.com" />
-              </label>
+              <div className="grid gap-2 text-sm font-medium text-slate-700">
+                <div className="flex items-center justify-between">
+                  <div>Téléphones</div>
+                  <button type="button" onClick={() => {
+                    const label = prompt('Libellé (ex: Mobile, Pro)') ?? undefined;
+                    const number = prompt('Numéro (ex: +33 6 12 34 56 78)') ?? '';
+                    if (number.trim()) void addPhone({ label, number: number.trim(), primary: false });
+                  }} className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-medium text-slate-700">+ Ajouter un numéro</button>
+                </div>
+                <div className="flex flex-col gap-2">
+                  {phonesState.length === 0 ? <div className="text-sm text-slate-500">Aucun numéro ajouté.</div> : phonesState.map((p) => (
+                    <div key={p.id} className="flex items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2">
+                      <div>
+                        <div className="text-sm font-medium">{p.label ?? 'Téléphone'}</div>
+                        <div className="text-sm text-slate-700">{p.number}</div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button type="button" onClick={() => removePhoneLocal(p.id)} className="text-sm text-rose-600">Supprimer</button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="md:col-span-2 grid gap-2">
+                <div className="text-sm font-medium text-slate-700">Adresse</div>
+                <input value={String(draft.addressLine ?? '')} onChange={(e) => setDraft((prev) => ({ ...prev, addressLine: e.target.value }))} className="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-slate-900 outline-none transition focus:border-slate-400 focus:bg-white" placeholder="Adresse (numéro, rue)" />
+                <div className="grid grid-cols-3 gap-2">
+                  <input value={String(draft.postalCode ?? '')} onChange={(e) => setDraft((prev) => ({ ...prev, postalCode: e.target.value }))} className="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-slate-900" placeholder="Code postal" />
+                  <input value={String(draft.city ?? '')} onChange={(e) => setDraft((prev) => ({ ...prev, city: e.target.value }))} className="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-slate-900" placeholder="Ville" />
+                  <input value={String(draft.country ?? '')} onChange={(e) => setDraft((prev) => ({ ...prev, country: e.target.value }))} className="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-slate-900" placeholder="Pays" />
+                </div>
+              </div>
+              <div className="grid gap-2">
+                <div className="flex items-center justify-between">
+                  <div className="text-sm font-medium text-slate-700">Liens professionnels</div>
+                  <button type="button" onClick={() => {
+                    const type = prompt('Type (LINKEDIN, GITHUB, PORTFOLIO, PERSONAL, OTHER)') ?? 'OTHER';
+                    const label = type === 'OTHER' ? prompt('Nom du lien (ex: Mon blog)') ?? undefined : undefined;
+                    const url = prompt('URL complète (https://...)') ?? '';
+                    if (url.trim()) void addLink({ type: type.toUpperCase(), label, url: url.trim() });
+                  }} className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-medium text-slate-700">+ Ajouter un lien</button>
+                </div>
+                <div className="flex flex-col gap-2">
+                  {linksState.length === 0 ? <div className="text-sm text-slate-500">Aucun lien ajouté.</div> : linksState.map((l) => (
+                    <div key={l.id} className="flex items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2">
+                      <div>
+                        <div className="text-sm font-medium">{l.type}{l.label ? ` · ${l.label}` : ''}</div>
+                        <div className="text-sm text-slate-700">{l.url}</div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button type="button" onClick={() => removeLinkLocal(l.id)} className="text-sm text-rose-600">Supprimer</button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
           </section>
         );

@@ -8,6 +8,10 @@ export class CreateCvDto {
   @IsOptional() @Transform(({ value }: { value: string }) => value?.trim().toLowerCase()) @IsEmail() @MaxLength(255) email?: string;
   @IsOptional() @Transform(({ value }: { value: string }) => value?.trim()) @IsString() @MaxLength(30) phone?: string;
   @IsOptional() @Transform(({ value }: { value: string }) => value?.trim()) @IsString() @MaxLength(255) address?: string;
+  @IsOptional() @Transform(({ value }: { value: string }) => value?.trim()) @IsString() @MaxLength(255) addressLine?: string;
+  @IsOptional() @Transform(({ value }: { value: string }) => value?.trim()) @IsString() @MaxLength(30) postalCode?: string;
+  @IsOptional() @Transform(({ value }: { value: string }) => value?.trim()) @IsString() @MaxLength(150) city?: string;
+  @IsOptional() @Transform(({ value }: { value: string }) => value?.trim()) @IsString() @MaxLength(150) country?: string;
   @IsOptional() @IsUrl({ require_protocol: true }) @MaxLength(2048) linkedin?: string;
   @IsOptional() @IsUrl({ require_protocol: true }) @MaxLength(2048) github?: string;
   @IsOptional() @IsUrl({ require_protocol: true }) @MaxLength(2048) portfolio?: string;

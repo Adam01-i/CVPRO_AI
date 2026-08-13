@@ -39,6 +39,22 @@ export const cvsApi = {
   removeProject: (token: string, cvId: string, id: string) =>
     apiRequest<void>(`/cvs/${cvId}/projects/${id}`, { method: 'DELETE' }, token),
 
+  // Phones
+  createPhone: (token: string, cvId: string, payload: { label?: string; number: string; primary?: boolean }) =>
+    apiRequest<Cv>(`/cvs/${cvId}/phones`, { method: 'POST', body: JSON.stringify(payload) }, token),
+  listPhones: (token: string, cvId: string) => apiRequest<any[]>(`/cvs/${cvId}/phones`, { method: 'GET' }, token),
+  updatePhone: (token: string, cvId: string, id: string, payload: Partial<{ label?: string; number?: string; primary?: boolean }>) =>
+    apiRequest<any>(`/cvs/${cvId}/phones/${id}`, { method: 'PATCH', body: JSON.stringify(payload) }, token),
+  removePhone: (token: string, cvId: string, id: string) => apiRequest<void>(`/cvs/${cvId}/phones/${id}`, { method: 'DELETE' }, token),
+
+  // Links
+  createLink: (token: string, cvId: string, payload: { type: string; label?: string; url: string }) =>
+    apiRequest<Cv>(`/cvs/${cvId}/links`, { method: 'POST', body: JSON.stringify(payload) }, token),
+  listLinks: (token: string, cvId: string) => apiRequest<any[]>(`/cvs/${cvId}/links`, { method: 'GET' }, token),
+  updateLink: (token: string, cvId: string, id: string, payload: Partial<{ type?: string; label?: string; url?: string }>) =>
+    apiRequest<any>(`/cvs/${cvId}/links/${id}`, { method: 'PATCH', body: JSON.stringify(payload) }, token),
+  removeLink: (token: string, cvId: string, id: string) => apiRequest<void>(`/cvs/${cvId}/links/${id}`, { method: 'DELETE' }, token),
+
   createCertification: (token: string, cvId: string, payload: Partial<Certification>) =>
     apiRequest<Certification>(`/cvs/${cvId}/certifications`, { method: 'POST', body: JSON.stringify(payload) }, token),
   listCertifications: (token: string, cvId: string) =>

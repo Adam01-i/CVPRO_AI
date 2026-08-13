@@ -60,4 +60,16 @@ export class CvsController {
   @Get(':cvId/languages') listLanguages(@CurrentUser() user: JwtPayload, @Param('cvId') cvId: string) { return this.cvsService.listLanguages(user.id, cvId); }
   @Patch(':cvId/languages/:id') updateLanguage(@CurrentUser() user: JwtPayload, @Param('cvId') cvId: string, @Param('id') id: string, @Body() dto: UpdateLanguageDto) { return this.cvsService.updateLanguage(user.id, cvId, id, dto); }
   @HttpCode(HttpStatus.NO_CONTENT) @Delete(':cvId/languages/:id') async removeLanguage(@CurrentUser() user: JwtPayload, @Param('cvId') cvId: string, @Param('id') id: string) { await this.cvsService.removeLanguage(user.id, cvId, id); }
+
+  // Phones
+  @Post(':cvId/phones') createPhone(@CurrentUser() user: JwtPayload, @Param('cvId') cvId: string, @Body() dto: any) { return this.cvsService.createPhone(user.id, cvId, dto); }
+  @Get(':cvId/phones') listPhones(@CurrentUser() user: JwtPayload, @Param('cvId') cvId: string) { return this.cvsService.listPhones(user.id, cvId); }
+  @Patch(':cvId/phones/:id') updatePhone(@CurrentUser() user: JwtPayload, @Param('cvId') cvId: string, @Param('id') id: string, @Body() dto: any) { return this.cvsService.updatePhone(user.id, cvId, id, dto); }
+  @HttpCode(HttpStatus.NO_CONTENT) @Delete(':cvId/phones/:id') async removePhone(@CurrentUser() user: JwtPayload, @Param('cvId') cvId: string, @Param('id') id: string) { await this.cvsService.removePhone(user.id, cvId, id); }
+
+  // Links
+  @Post(':cvId/links') createLink(@CurrentUser() user: JwtPayload, @Param('cvId') cvId: string, @Body() dto: any) { return this.cvsService.createLink(user.id, cvId, dto); }
+  @Get(':cvId/links') listLinks(@CurrentUser() user: JwtPayload, @Param('cvId') cvId: string) { return this.cvsService.listLinks(user.id, cvId); }
+  @Patch(':cvId/links/:id') updateLink(@CurrentUser() user: JwtPayload, @Param('cvId') cvId: string, @Param('id') id: string, @Body() dto: any) { return this.cvsService.updateLink(user.id, cvId, id, dto); }
+  @HttpCode(HttpStatus.NO_CONTENT) @Delete(':cvId/links/:id') async removeLink(@CurrentUser() user: JwtPayload, @Param('cvId') cvId: string, @Param('id') id: string) { await this.cvsService.removeLink(user.id, cvId, id); }
 }

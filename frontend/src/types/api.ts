@@ -32,11 +32,17 @@ export type Cv = {
   summary?: string | null;
   profession?: string | null;
   email?: string | null;
-  phone?: string | null;
-  address?: string | null;
+  phone?: string | null; // legacy single phone
+  address?: string | null; // legacy freeform address
+  addressLine?: string | null;
+  postalCode?: string | null;
+  city?: string | null;
+  country?: string | null;
   linkedin?: string | null;
   github?: string | null;
   portfolio?: string | null;
+  phones?: CvPhone[];
+  links?: CvLink[];
   isActive: boolean;
   isPublic: boolean;
   createdAt: string;
@@ -125,6 +131,24 @@ export type Language = {
   cvId: string;
   name: string;
   level?: string | null;
+  createdAt: string;
+};
+
+export type CvPhone = {
+  id: string;
+  cvId: string;
+  label?: string | null;
+  number: string;
+  primary: boolean;
+  createdAt: string;
+};
+
+export type CvLink = {
+  id: string;
+  cvId: string;
+  type: 'LINKEDIN' | 'GITHUB' | 'PORTFOLIO' | 'PERSONAL' | 'BEHANCE' | 'DRIBBBLE' | 'TWITTER' | 'OTHER';
+  label?: string | null;
+  url: string;
   createdAt: string;
 };
 
