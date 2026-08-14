@@ -108,6 +108,7 @@ model CV {
   userId String
 
   title      String
+  photoUrl String?
   summary    String?
   profession String?
   email      String?

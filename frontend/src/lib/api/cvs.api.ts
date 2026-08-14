@@ -12,6 +12,8 @@ import type {
 
 import { apiRequest } from "./client";
 
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? '/api/v1';
+
 export const cvsApi = {
   // =========================================================
   // CV
@@ -493,4 +495,25 @@ export const cvsApi = {
       },
       token,
     ),
+
+
+    uploadPhoto: async (token: string, cvId: string, file: File): Promise<Cv> => {
+    const formData = new FormData();
+    formData.append('photo', file);
+
+    const res = await fetch(`${API_BASE_URL}/cvs/${cvId}/photo`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` }, // pas de Content-Type ici
+      body: formData,
+    });
+
+    if (!res.ok) {
+      const body = await res.json().catch(() => null);
+      throw new Error(body?.message ?? 'Échec de l’envoi de la photo.');
+    }
+    return res.json();
+  },
+
+  removePhoto: (token: string, cvId: string) =>
+    apiRequest<void>(`/cvs/${cvId}/photo`, { method: 'DELETE' }, token),
 };

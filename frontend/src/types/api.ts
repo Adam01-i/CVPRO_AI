@@ -47,6 +47,7 @@ export type Cv = {
   summary?: string | null;
   profession?: string | null;
   email?: string | null;
+  photoUrl?: string | null; // ajouté
 
   // =======================================================
   // LEGACY FIELDS

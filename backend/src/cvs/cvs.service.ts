@@ -36,6 +36,9 @@ import { CreateCvPhoneDto } from './dto/create-cv-phone.dto';
 import { UpdateCvPhoneDto } from './dto/update-cv-phone.dto';
 import { CreateCvLinkDto } from './dto/create-cv-link.dto';
 import { UpdateCvLinkDto } from './dto/update-cv-link.dto';
+import { StorageService } from '../storage/storage.service';
+import { randomUUID } from 'crypto';
+import { extname } from 'path';
 
 const cvDetails = {
   experiences: { orderBy: { startDate: 'desc' } },
@@ -48,7 +51,10 @@ const cvDetails = {
 
 @Injectable()
 export class CvsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly storage: StorageService, // ajouté
+  ) {}
 
   async create(userId: string, dto: CreateCvDto) {
     return this.prisma.$transaction(async (tx) => {
@@ -472,5 +478,36 @@ export class CvsService {
   ): void {
     if (startDate && endDate && endDate < startDate)
       throw new BadRequestException('End date must be after start date.');
+  }
+
+  // ============================================================
+  // PHOTO
+  // ============================================================
+  async updatePhoto(userId: string, id: string, file: Express.Multer.File) {
+    const cv = await this.findOwnedCv(userId, id);
+
+    // Supprime l'ancienne photo si elle existe, pour ne pas accumuler
+    // des fichiers orphelins sur le disque.
+    if (cv.photoUrl) {
+      await this.storage.deleteFile(cv.photoUrl);
+    }
+
+    const ext = extname(file.originalname) || '.jpg';
+    const filename = `${randomUUID()}${ext}`;
+    const { path } = await this.storage.saveFile(
+      file.buffer,
+      filename,
+      'cv-photos',
+    );
+
+    return this.prisma.cV.update({ where: { id }, data: { photoUrl: path } });
+  }
+
+  async removePhoto(userId: string, id: string): Promise<void> {
+    const cv = await this.findOwnedCv(userId, id);
+    if (cv.photoUrl) {
+      await this.storage.deleteFile(cv.photoUrl);
+      await this.prisma.cV.update({ where: { id }, data: { photoUrl: null } });
+    }
   }
 }

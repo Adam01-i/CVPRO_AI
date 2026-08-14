@@ -9,7 +9,12 @@ import {
   Patch,
   Post,
   UseGuards,
+  BadRequestException,
+  UploadedFile,
+  UseInterceptors,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { memoryStorage } from 'multer';
 import { JwtPayload } from '../auth/auth.service';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -332,4 +337,42 @@ export class CvsController {
   ) {
     await this.cvsService.removeLink(user.id, cvId, id);
   }
+
+  // ============================================================
+  // PHOTO — nouveau endpoint dédié, séparé du PATCH texte
+  // ============================================================
+  @Post(':id/photo')
+  @UseInterceptors(
+    FileInterceptor('photo', {
+      storage: memoryStorage(), // buffer en mémoire : le choix du disque
+                                 // final appartient à StorageService, pas à Multer
+      fileFilter: (_req, file, cb) => {
+        const allowed = ['image/jpeg', 'image/png', 'image/webp'];
+        if (!allowed.includes(file.mimetype)) {
+          cb(new BadRequestException('Format non supporté (jpeg, png, webp uniquement).'), false);
+          return;
+        }
+        cb(null, true);
+      },
+      limits: { fileSize: 3 * 1024 * 1024 }, // 3 Mo
+    }),
+  )
+  uploadPhoto(
+    @CurrentUser() user: JwtPayload,
+    @Param('id') id: string,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+    if (!file) throw new BadRequestException('Fichier photo requis.');
+    return this.cvsService.updatePhoto(user.id, id, file);
+  }
+
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @Delete(':id/photo')
+  async removePhoto(
+    @CurrentUser() user: JwtPayload,
+    @Param('id') id: string,
+  ) {
+    await this.cvsService.removePhoto(user.id, id);
+  }
+
 }

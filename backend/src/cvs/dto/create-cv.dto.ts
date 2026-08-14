@@ -15,4 +15,7 @@ export class CreateCvDto {
   @IsOptional() @IsUrl({ require_protocol: true }) @MaxLength(2048) linkedin?: string;
   @IsOptional() @IsUrl({ require_protocol: true }) @MaxLength(2048) github?: string;
   @IsOptional() @IsUrl({ require_protocol: true }) @MaxLength(2048) portfolio?: string;
+  // Non exposé côté DTO d'écriture publique : photoUrl est géré exclusivement
+  // par l'endpoint POST /cvs/:id/photo, jamais via ce DTO texte, pour éviter
+  // qu'un client envoie n'importe quelle URL sans passer par la validation d'upload.
 }
