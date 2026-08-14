@@ -1,7 +1,6 @@
 'use client';
 
 import { useParams } from 'next/navigation';
-import { AppShell } from '@/components/layout/app-shell';
 import { ProtectedRoute } from '@/components/layout/protected-route';
 import { CvEditor } from '@/components/cvs/cv-editor';
 
@@ -10,9 +9,7 @@ export default function CvDetailsPage() {
 
   return (
     <ProtectedRoute>
-      <AppShell>
-        <CvEditor cvId={params.id} />
-      </AppShell>
+      <CvEditor cvId={params.id} />
     </ProtectedRoute>
   );
 }
