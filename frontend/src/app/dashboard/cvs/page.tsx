@@ -5,15 +5,21 @@ import { useRouter } from 'next/navigation';
 import { AppShell } from '@/components/layout/app-shell';
 import { ProtectedRoute } from '@/components/layout/protected-route';
 import { CvCard } from '@/components/cvs/cv-card';
+import { CvLibraryHeader } from '@/components/cvs/cv-library-header';
+import { CvLibraryStats } from '@/components/cvs/cv-library-stats';
+import { CvEmptyState } from '@/components/cvs/cv-empty-state';
+import { CvSkeletonCard } from '@/components/cvs/cv-skeleton-card';
 import { useAuth } from '@/contexts/auth-context';
 import { cvsApi } from '@/lib/api/cvs.api';
 import type { Cv } from '@/types/api';
 
 export default function DashboardCvsPage() {
   const router = useRouter();
-  const { token } = useAuth();
+  const { token, user } = useAuth();
   const [cvs, setCvs] = useState<Cv[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const userName = `${user?.firstName ?? ''} ${user?.lastName ?? ''}`.trim() || 'Votre profil';
 
   const loadCvs = async () => {
     if (!token) return;
@@ -62,39 +68,67 @@ export default function DashboardCvsPage() {
     router.push(`/dashboard/cvs/${created.id}`);
   };
 
+  const goToNew = () => router.push('/dashboard/cvs/new');
+
+  const activeCv = cvs.find((cv) => cv.isActive) ?? null;
+  const otherCvs = cvs.filter((cv) => cv.id !== activeCv?.id);
+
   return (
     <ProtectedRoute>
       <AppShell>
         <div className="space-y-6">
-          <section className="rounded-[30px] border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-              <div>
-                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Portfolio</p>
-                <h1 className="mt-2 text-3xl font-semibold tracking-tight text-slate-900">Mes CV</h1>
-              </div>
-              <button type="button" onClick={() => router.push('/dashboard/cvs/new')} className="rounded-full bg-slate-900 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-slate-800">
-                + Créer un CV
-              </button>
-            </div>
-          </section>
+          <CvLibraryHeader onCreate={goToNew} />
 
           {loading ? (
-            <div className="rounded-[28px] border border-slate-200 bg-white p-8 text-sm text-slate-500">Chargement de vos CV...</div>
-          ) : cvs.length === 0 ? (
-            <section className="rounded-[32px] border border-dashed border-slate-300 bg-white p-10 text-center shadow-sm">
-              <div className="mx-auto max-w-lg">
-                <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-100 text-2xl text-slate-700">✦</div>
-                <h2 className="mt-5 text-2xl font-semibold text-slate-900">Votre prochain CV commence ici.</h2>
-                <p className="mt-3 text-sm leading-6 text-slate-600">Créez une version claire, professionnelle et à jour pour chaque opportunité que vous ciblez.</p>
-                <button type="button" onClick={() => router.push('/dashboard/cvs/new')} className="mt-6 rounded-full bg-slate-900 px-5 py-3 text-sm font-medium text-white">Créer mon premier CV</button>
+            <>
+              <div className="grid gap-4 sm:grid-cols-3">
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <div key={i} className="h-24 animate-pulse rounded-[24px] bg-white ring-1 ring-slate-200" />
+                ))}
               </div>
-            </section>
+              <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <CvSkeletonCard key={i} />
+                ))}
+              </div>
+            </>
+          ) : cvs.length === 0 ? (
+            <CvEmptyState onCreate={goToNew} />
           ) : (
-            <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-              {cvs.map((cv) => (
-                <CvCard key={cv.id} cv={cv} onActivate={handleActivate} onDelete={handleDelete} onDuplicate={handleDuplicate} />
-              ))}
-            </div>
+            <>
+              <CvLibraryStats cvs={cvs} />
+
+              {activeCv ? (
+                <CvCard
+                  cv={activeCv}
+                  userName={userName}
+                  variant="featured"
+                  onActivate={handleActivate}
+                  onDelete={handleDelete}
+                  onDuplicate={handleDuplicate}
+                />
+              ) : null}
+
+              {otherCvs.length > 0 ? (
+                <section>
+                  <h2 className="mb-4 text-lg font-semibold text-slate-900">
+                    {activeCv ? 'Mes autres CV' : 'Mes CV'}
+                  </h2>
+                  <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+                    {otherCvs.map((cv) => (
+                      <CvCard
+                        key={cv.id}
+                        cv={cv}
+                        userName={userName}
+                        onActivate={handleActivate}
+                        onDelete={handleDelete}
+                        onDuplicate={handleDuplicate}
+                      />
+                    ))}
+                  </div>
+                </section>
+              ) : null}
+            </>
           )}
         </div>
       </AppShell>
