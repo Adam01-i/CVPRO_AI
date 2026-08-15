@@ -1,15 +1,16 @@
 'use client';
 
-import { AppShell } from '@/components/layout/app-shell';
+import { useState } from 'react';
 import { ProtectedRoute } from '@/components/layout/protected-route';
 import { CvEditor } from '@/components/cvs/cv-editor';
+import { TemplateChooser, type TemplateSelection } from '@/components/cvs/template-chooser/template-chooser';
 
 export default function NewCvPage() {
+  const [selection, setSelection] = useState<TemplateSelection | null>(null);
+
   return (
     <ProtectedRoute>
-      <AppShell>
-        <CvEditor />
-      </AppShell>
+      {selection ? <CvEditor initialTemplate={selection} /> : <TemplateChooser onUseTemplate={setSelection} />}
     </ProtectedRoute>
   );
 }

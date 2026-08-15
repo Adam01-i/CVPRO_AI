@@ -1,12 +1,15 @@
 'use client';
 
-import { AppShell } from '@/components/layout/app-shell';
+import { useState } from 'react';
 import { CvEditor } from '@/components/cvs/cv-editor';
+import { TemplateChooser, type TemplateSelection } from '@/components/cvs/template-chooser/template-chooser';
 
 export default function PublicCvBuilderPage() {
-  return (
-    <AppShell>
-      <CvEditor />
-    </AppShell>
-  );
+  const [selection, setSelection] = useState<TemplateSelection | null>(null);
+
+  if (!selection) {
+    return <TemplateChooser onUseTemplate={setSelection} />;
+  }
+
+  return <CvEditor initialTemplate={selection} />;
 }

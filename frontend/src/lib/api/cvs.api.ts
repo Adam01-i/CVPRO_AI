@@ -42,6 +42,9 @@ export const cvsApi = {
       linkedin?: string;
       github?: string;
       portfolio?: string;
+
+      templateId?: string;   // ajouté
+      accentColor?: string;  // ajouté
     },
   ) =>
     apiRequest<Cv>(

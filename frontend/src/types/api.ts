@@ -49,6 +49,9 @@ export type Cv = {
   email?: string | null;
   photoUrl?: string | null; // ajouté
 
+  templateId?: string;   // ajouté — défaut "modern" côté backend
+  accentColor?: string;  // ajouté — défaut "#0f172a" côté backend
+
   // =======================================================
   // LEGACY FIELDS
   // =======================================================

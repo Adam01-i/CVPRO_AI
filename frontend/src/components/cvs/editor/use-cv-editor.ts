@@ -4,26 +4,34 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 import { useAuth } from '@/contexts/auth-context';
 import { cvsApi } from '@/lib/api/cvs.api';
+import { DEFAULT_TEMPLATE_ID, DEFAULT_ACCENT_COLOR } from '../templates/template-registry';
 import type {
   Certification, Cv, CvLink, CvPhone, CvSkill,
   Education, Experience, Language, Project,
 } from '@/types/api';
 
-const emptyCvBase = {
-  title: '', profession: '', summary: '', email: '',
-  phone: '', address: '', linkedin: '', github: '', portfolio: '',
-  addressLine: '', postalCode: '', city: '', country: '',
-  isActive: false,
-};
+export type TemplateSelection = { templateId: string; accentColor: string };
+
+function buildEmptyCvBase(initialTemplate?: TemplateSelection) {
+  return {
+    title: '', profession: '', summary: '', email: '',
+    phone: '', address: '', linkedin: '', github: '', portfolio: '',
+    addressLine: '', postalCode: '', city: '', country: '',
+    isActive: false,
+    templateId: initialTemplate?.templateId ?? DEFAULT_TEMPLATE_ID,
+    accentColor: initialTemplate?.accentColor ?? DEFAULT_ACCENT_COLOR,
+  };
+}
 
 function normalizeDate(value?: string) {
   if (!value) return undefined;
   return new Date(`${value}T12:00:00.000Z`).toISOString();
 }
 
-export function useCvEditor(cvId?: string) {
+export function useCvEditor(cvId?: string, initialTemplate?: TemplateSelection) {
   const router = useRouter();
   const { token, user } = useAuth();
+  const emptyCvBase = useMemo(() => buildEmptyCvBase(initialTemplate), [initialTemplate]);
 
   const [cv, setCv] = useState<Cv | null>(null);
   const [draft, setDraft] = useState<Record<string, string | boolean>>(emptyCvBase);
@@ -57,6 +65,8 @@ export function useCvEditor(cvId?: string) {
           portfolio: nextCv.portfolio ?? '', addressLine: nextCv.addressLine ?? '',
           postalCode: nextCv.postalCode ?? '', city: nextCv.city ?? '',
           country: nextCv.country ?? '', isActive: Boolean(nextCv.isActive),
+          templateId: nextCv.templateId ?? DEFAULT_TEMPLATE_ID,
+          accentColor: nextCv.accentColor ?? DEFAULT_ACCENT_COLOR,
         });
         setExperiences(nextCv.experiences ?? []);
         setEducations(nextCv.educations ?? []);
@@ -120,6 +130,8 @@ export function useCvEditor(cvId?: string) {
       postalCode: String(draft.postalCode ?? '').trim() || undefined,
       city: String(draft.city ?? '').trim() || undefined,
       country: String(draft.country ?? '').trim() || undefined,
+      templateId: String(draft.templateId ?? DEFAULT_TEMPLATE_ID),
+      accentColor: String(draft.accentColor ?? DEFAULT_ACCENT_COLOR),
     };
     if (!payload.title) {
       if (!auto) setError('Le titre du CV est obligatoire.');
@@ -185,6 +197,11 @@ export function useCvEditor(cvId?: string) {
     if (!token || !cvId) return;
     await cvsApi.removePhoto(token, cvId);
     await fetchCv();
+  };
+
+  const applyTemplate = (selection: { templateId: string; accentColor: string }) => {
+    setDraft((prev) => ({ ...prev, templateId: selection.templateId, accentColor: selection.accentColor }));
+    // L'autosave existant (useEffect à 900ms) prend le relais automatiquement.
   };
 
   const createExperience = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -341,9 +358,6 @@ export function useCvEditor(cvId?: string) {
   const removeCertification = async (id: string) => { if (!token || !cvId) return; await cvsApi.removeCertification(token, cvId, id); await resetSectionState(); };
   const removeLanguage = async (id: string) => { if (!token || !cvId) return; await cvsApi.removeLanguage(token, cvId, id); await resetSectionState(); };
 
-  // ============================================================
-  // PROGRESSION — calculée dynamiquement, jamais une valeur en dur
-  // ============================================================
   const sectionStatus = useMemo(() => {
     const hasText = (v: unknown) => typeof v === 'string' && v.trim().length > 0;
     return {
@@ -375,5 +389,6 @@ export function useCvEditor(cvId?: string) {
     removeExperience, removeEducation, removeSkill, removeProject,
     removeCertification, removeLanguage,
     addPhone, removePhoneLocal, addLink, removeLinkLocal,
+    applyTemplate,
   };
 }

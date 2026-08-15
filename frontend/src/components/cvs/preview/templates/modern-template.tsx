@@ -7,7 +7,9 @@ function formatDate(date?: string | null) {
   return new Date(date).toLocaleDateString('fr-FR', { month: 'short', year: 'numeric' });
 }
 
-export function ModernTemplate({ cv, userName, photoUrl }: CvTemplateProps) {
+export function ModernTemplate({ cv, userName, photoUrl, accentColor }: CvTemplateProps) {
+  const color = accentColor || '#0f172a';
+
   const phones = cv.phones && cv.phones.length > 0
     ? cv.phones
     : cv.phone ? [{ id: 'legacy', number: cv.phone }] : [];
@@ -22,8 +24,11 @@ export function ModernTemplate({ cv, userName, photoUrl }: CvTemplateProps) {
 
   return (
     <div className="flex h-full w-full font-[Inter,Segoe_UI,sans-serif] text-[13px] text-slate-800">
-      {/* Colonne latérale */}
-      <aside className="flex w-[34%] flex-col gap-6 bg-slate-900 px-6 py-8 text-slate-100">
+      {/* Colonne latérale — couleur dynamique */}
+      <aside
+        style={{ backgroundColor: color }}
+        className="flex w-[34%] flex-col gap-6 px-6 py-8 text-slate-100"
+      >
         {photoUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={photoUrl} alt="" className="h-24 w-24 self-center rounded-full object-cover ring-2 ring-white/20" />
@@ -31,12 +36,12 @@ export function ModernTemplate({ cv, userName, photoUrl }: CvTemplateProps) {
 
         <div className="text-center">
           <h1 className="text-lg font-semibold leading-tight text-white">{userName}</h1>
-          <p className="mt-1 text-[11px] uppercase tracking-[0.15em] text-slate-400">
+          <p className="mt-1 text-[11px] uppercase tracking-[0.15em] text-white/70">
             {cv.profession || 'Profession'}
           </p>
         </div>
 
-        <div className="space-y-2 border-t border-white/10 pt-4 text-[11px] leading-5 text-slate-300">
+        <div className="space-y-2 border-t border-white/15 pt-4 text-[11px] leading-5 text-white/85">
           {cv.email ? <p className="break-words">{cv.email}</p> : null}
           {phones.map((p) => <p key={p.id}>{p.number}</p>)}
           {(cv.addressLine || cv.city) ? (
@@ -45,17 +50,17 @@ export function ModernTemplate({ cv, userName, photoUrl }: CvTemplateProps) {
         </div>
 
         {links.length > 0 ? (
-          <div className="space-y-1.5 border-t border-white/10 pt-4 text-[11px] text-slate-300">
+          <div className="space-y-1.5 border-t border-white/15 pt-4 text-[11px] text-white/85">
             {links.map((l) => <p key={l.id} className="break-words">{l.url}</p>)}
           </div>
         ) : null}
 
         {cv.skills && cv.skills.length > 0 ? (
-          <div className="border-t border-white/10 pt-4">
-            <h3 className="mb-2 text-[11px] font-semibold uppercase tracking-[0.15em] text-slate-400">Compétences</h3>
+          <div className="border-t border-white/15 pt-4">
+            <h3 className="mb-2 text-[11px] font-semibold uppercase tracking-[0.15em] text-white/70">Compétences</h3>
             <div className="flex flex-wrap gap-1.5">
               {cv.skills.map((s: any) => (
-                <span key={s.id} className="rounded-full bg-white/10 px-2 py-1 text-[10px] text-slate-100">
+                <span key={s.id} className="rounded-full bg-white/15 px-2 py-1 text-[10px] text-white">
                   {s.skill?.name}
                 </span>
               ))}
@@ -64,9 +69,9 @@ export function ModernTemplate({ cv, userName, photoUrl }: CvTemplateProps) {
         ) : null}
 
         {cv.languages && cv.languages.length > 0 ? (
-          <div className="border-t border-white/10 pt-4">
-            <h3 className="mb-2 text-[11px] font-semibold uppercase tracking-[0.15em] text-slate-400">Langues</h3>
-            <div className="space-y-1 text-[11px] text-slate-300">
+          <div className="border-t border-white/15 pt-4">
+            <h3 className="mb-2 text-[11px] font-semibold uppercase tracking-[0.15em] text-white/70">Langues</h3>
+            <div className="space-y-1 text-[11px] text-white/85">
               {cv.languages.map((l: any) => (
                 <p key={l.id}>{l.name}{l.level ? ` — ${l.level}` : ''}</p>
               ))}
@@ -78,6 +83,7 @@ export function ModernTemplate({ cv, userName, photoUrl }: CvTemplateProps) {
       {/* Colonne principale */}
       <main className="flex-1 space-y-6 px-8 py-8">
         <header>
+          <div className="mb-2 h-[3px] w-10 rounded-full" style={{ backgroundColor: color }} aria-hidden />
           <h1 className="text-[26px] font-bold leading-tight tracking-tight text-slate-900">
             {cv.title || 'Titre du CV'}
           </h1>

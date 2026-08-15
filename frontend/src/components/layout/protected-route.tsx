@@ -1,3 +1,5 @@
+// src/components/layout/protected-route.tsx
+
 'use client';
 
 import { useEffect } from 'react';

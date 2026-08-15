@@ -119,6 +119,9 @@ model CV {
   github     String?
   portfolio  String?
 
+  templateId  String  @default("modern")
+  accentColor String  @default("#0f172a")
+
   // Structured / new contact fields
   addressLine String?
   postalCode  String?

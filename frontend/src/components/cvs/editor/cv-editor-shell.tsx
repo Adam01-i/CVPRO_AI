@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useState } from 'react';
 import { CvPreview } from '../preview/cv-preview';
 import { CvEditorSidebar, type CvSectionId } from './cv-editor-sidebar';
-import { useCvEditor } from './use-cv-editor';
+import { useCvEditor, type TemplateSelection } from './use-cv-editor';
 import { CvContactForm } from './cv-contact-form';
 import { CvProfileForm } from './cv-profile-form';
 import { CvExperienceForm } from './cv-experience-form';
@@ -13,17 +13,19 @@ import { CvSkillsForm } from './cv-skills-form';
 import { CvProjectsForm } from './cv-projects-form';
 import { CvCertificationsForm } from './cv-certifications-form';
 import { CvLanguagesForm } from './cv-languages-form';
+import { TemplateChooser } from '../template-chooser/template-chooser'; // ajouté
 
 const SECTION_ORDER: CvSectionId[] = [
   'identity', 'profile', 'experience', 'education',
   'skills', 'projects', 'certifications', 'languages',
 ];
 
-export function CvEditorShell({ cvId }: { cvId?: string }) {
-  const editor = useCvEditor(cvId);
+export function CvEditorShell({ cvId, initialTemplate }: { cvId?: string; initialTemplate?: TemplateSelection }) {
+  const editor = useCvEditor(cvId, initialTemplate);
   const [activeSection, setActiveSection] = useState<CvSectionId>('identity');
   const [mobilePreviewOpen, setMobilePreviewOpen] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [templateChooserOpen, setTemplateChooserOpen] = useState(false); // ajouté
 
   if (!editor) return null;
 
@@ -51,30 +53,20 @@ export function CvEditorShell({ cvId }: { cvId?: string }) {
 
   const renderSection = () => {
     switch (activeSection) {
-      case 'identity':
-        return <CvContactForm editor={editor} />;
-      case 'profile':
-        return <CvProfileForm editor={editor} />;
-      case 'experience':
-        return <CvExperienceForm editor={editor} />;
-      case 'education':
-        return <CvEducationForm editor={editor} />;
-      case 'skills':
-        return <CvSkillsForm editor={editor} />;
-      case 'projects':
-        return <CvProjectsForm editor={editor} />;
-      case 'certifications':
-        return <CvCertificationsForm editor={editor} />;
-      case 'languages':
-        return <CvLanguagesForm editor={editor} />;
-      default:
-        return null;
+      case 'identity': return <CvContactForm editor={editor} />;
+      case 'profile': return <CvProfileForm editor={editor} />;
+      case 'experience': return <CvExperienceForm editor={editor} />;
+      case 'education': return <CvEducationForm editor={editor} />;
+      case 'skills': return <CvSkillsForm editor={editor} />;
+      case 'projects': return <CvProjectsForm editor={editor} />;
+      case 'certifications': return <CvCertificationsForm editor={editor} />;
+      case 'languages': return <CvLanguagesForm editor={editor} />;
+      default: return null;
     }
   };
 
   return (
     <div className="fixed inset-0 flex bg-slate-50">
-      {/* Sidebar desktop */}
       <div className="hidden w-[22%] min-w-[260px] max-w-[320px] lg:block">
         <CvEditorSidebar
           activeSection={activeSection}
@@ -86,7 +78,6 @@ export function CvEditorShell({ cvId }: { cvId?: string }) {
         />
       </div>
 
-      {/* Drawer mobile */}
       {mobileNavOpen ? (
         <div className="fixed inset-0 z-50 flex lg:hidden">
           <div className="w-[80%] max-w-[320px]">
@@ -99,16 +90,10 @@ export function CvEditorShell({ cvId }: { cvId?: string }) {
               onFinalize={() => void editor.saveCv()}
             />
           </div>
-          <button
-            type="button"
-            aria-label="Fermer la navigation"
-            onClick={() => setMobileNavOpen(false)}
-            className="flex-1 bg-slate-900/40"
-          />
+          <button type="button" aria-label="Fermer la navigation" onClick={() => setMobileNavOpen(false)} className="flex-1 bg-slate-900/40" />
         </div>
       ) : null}
 
-      {/* Workspace */}
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="flex items-center justify-between border-b border-slate-200 bg-white px-4 py-3 lg:px-8">
           <div className="flex items-center gap-3">
@@ -128,6 +113,13 @@ export function CvEditorShell({ cvId }: { cvId?: string }) {
             <span className="hidden text-sm text-slate-500 sm:inline" aria-live="polite">
               {editor.saveState === 'saving' ? 'Enregistrement…' : editor.saveState === 'saved' ? '✓ Enregistré' : ''}
             </span>
+            <button
+              type="button"
+              onClick={() => setTemplateChooserOpen(true)}
+              className="hidden rounded-full border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 hover:border-slate-300 md:inline-flex"
+            >
+              Changer de modèle
+            </button>
             {cvId ? (
               <button
                 type="button"
@@ -154,11 +146,9 @@ export function CvEditorShell({ cvId }: { cvId?: string }) {
         ) : null}
 
         <div className="grid min-h-0 flex-1 grid-cols-1 lg:grid-cols-[1.15fr_0.85fr]">
-          {/* Édition */}
           <div className="min-h-0 overflow-y-auto px-4 py-6 lg:px-8">
             <div className="mx-auto max-w-2xl space-y-6">
               {renderSection()}
-
               <div className="flex items-center justify-between rounded-[24px] border border-slate-200 bg-white px-4 py-3 shadow-sm">
                 <span className="text-sm text-slate-500">
                   {SECTION_ORDER.indexOf(activeSection) + 1} / {SECTION_ORDER.length}
@@ -172,11 +162,7 @@ export function CvEditorShell({ cvId }: { cvId?: string }) {
                   >
                     Précédent
                   </button>
-                  <button
-                    type="button"
-                    onClick={goToNext}
-                    className="rounded-full bg-slate-900 px-4 py-2 text-sm font-medium text-white"
-                  >
+                  <button type="button" onClick={goToNext} className="rounded-full bg-slate-900 px-4 py-2 text-sm font-medium text-white">
                     {activeSection === SECTION_ORDER[SECTION_ORDER.length - 1] ? 'Terminer' : 'Suivant'}
                   </button>
                 </div>
@@ -184,23 +170,17 @@ export function CvEditorShell({ cvId }: { cvId?: string }) {
             </div>
           </div>
 
-          {/* Preview desktop */}
           <div className="hidden min-h-0 overflow-y-auto border-l border-slate-200 bg-slate-100 px-6 py-8 lg:block">
             <CvPreview cv={previewCv} userName={editor.userName} />
           </div>
         </div>
       </div>
 
-      {/* Preview mobile en overlay */}
       {mobilePreviewOpen ? (
         <div className="fixed inset-0 z-50 flex flex-col bg-slate-100 lg:hidden">
           <div className="flex items-center justify-between border-b border-slate-200 bg-white px-4 py-3">
             <span className="text-sm font-semibold text-slate-900">Aperçu</span>
-            <button
-              type="button"
-              onClick={() => setMobilePreviewOpen(false)}
-              className="rounded-full border border-slate-200 px-3 py-1.5 text-sm font-medium text-slate-700"
-            >
+            <button type="button" onClick={() => setMobilePreviewOpen(false)} className="rounded-full border border-slate-200 px-3 py-1.5 text-sm font-medium text-slate-700">
               Fermer
             </button>
           </div>
@@ -208,6 +188,21 @@ export function CvEditorShell({ cvId }: { cvId?: string }) {
             <CvPreview cv={previewCv} userName={editor.userName} />
           </div>
         </div>
+      ) : null}
+
+      {/* Overlay changement de modèle — ajouté */}
+      {templateChooserOpen ? (
+        <TemplateChooser
+          initialSelection={{
+            templateId: String(editor.draft.templateId ?? 'modern'),
+            accentColor: String(editor.draft.accentColor ?? '#0f172a'),
+          }}
+          onClose={() => setTemplateChooserOpen(false)}
+          onUseTemplate={(selection) => {
+            editor.applyTemplate(selection);
+            setTemplateChooserOpen(false);
+          }}
+        />
       ) : null}
     </div>
   );
