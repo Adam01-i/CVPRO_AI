@@ -176,6 +176,34 @@ export function CvContactForm({ editor }: { editor: any }) {
           />
         </label>
 
+
+        {/* -------------------------------------------------------------- */}
+        {/* Adresse (sans pays)                                            */}
+        {/* -------------------------------------------------------------- */}
+        <div className="md:col-span-2 grid gap-2">
+          <span className="text-sm font-medium text-slate-700">Adresse</span>
+          <input
+            value={String(editor.draft.addressLine ?? '')}
+            onChange={(e) => editor.setDraft((prev: any) => ({ ...prev, addressLine: e.target.value }))}
+            className="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-slate-900"
+            placeholder="Adresse (numéro, rue)"
+          />
+          <div className="grid grid-cols-2 gap-2">
+            <input
+              value={String(editor.draft.postalCode ?? '')}
+              onChange={(e) => editor.setDraft((prev: any) => ({ ...prev, postalCode: e.target.value }))}
+              className="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-slate-900"
+              placeholder="Code postal"
+            />
+            <input
+              value={String(editor.draft.city ?? '')}
+              onChange={(e) => editor.setDraft((prev: any) => ({ ...prev, city: e.target.value }))}
+              className="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-slate-900"
+              placeholder="Ville"
+            />
+          </div>
+        </div>
+
         {/* -------------------------------------------------------------- */}
         {/* Téléphones                                                     */}
         {/* -------------------------------------------------------------- */}
@@ -283,32 +311,6 @@ export function CvContactForm({ editor }: { editor: any }) {
           )}
         </div>
 
-        {/* -------------------------------------------------------------- */}
-        {/* Adresse (sans pays)                                            */}
-        {/* -------------------------------------------------------------- */}
-        <div className="md:col-span-2 grid gap-2">
-          <span className="text-sm font-medium text-slate-700">Adresse</span>
-          <input
-            value={String(editor.draft.addressLine ?? '')}
-            onChange={(e) => editor.setDraft((prev: any) => ({ ...prev, addressLine: e.target.value }))}
-            className="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-slate-900"
-            placeholder="Adresse (numéro, rue)"
-          />
-          <div className="grid grid-cols-2 gap-2">
-            <input
-              value={String(editor.draft.postalCode ?? '')}
-              onChange={(e) => editor.setDraft((prev: any) => ({ ...prev, postalCode: e.target.value }))}
-              className="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-slate-900"
-              placeholder="Code postal"
-            />
-            <input
-              value={String(editor.draft.city ?? '')}
-              onChange={(e) => editor.setDraft((prev: any) => ({ ...prev, city: e.target.value }))}
-              className="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-slate-900"
-              placeholder="Ville"
-            />
-          </div>
-        </div>
 
         {/* -------------------------------------------------------------- */}
         {/* Liens professionnels                                           */}
