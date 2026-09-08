@@ -56,7 +56,6 @@ export default function DashboardCvsPage() {
     if (!token) return;
     const created = await cvsApi.create(token, {
       title: `${cv.title} (copie)`,
-      profession: cv.profession ?? undefined,
       summary: cv.summary ?? undefined,
       email: cv.email ?? undefined,
       phone: cv.phone ?? undefined,

@@ -55,9 +55,6 @@ export function CvCard({
             <h3 className={`mt-2 font-semibold text-slate-900 ${isFeatured ? 'text-2xl' : 'text-xl'}`}>
               {cv.title}
             </h3>
-            <p className="mt-1 text-sm text-slate-500">
-              {cv.profession ?? 'Profession non renseignée'}
-            </p>
           </div>
         </div>
 

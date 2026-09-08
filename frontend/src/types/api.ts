@@ -45,7 +45,6 @@ export type Cv = {
   title: string;
 
   summary?: string | null;
-  profession?: string | null;
   email?: string | null;
   photoUrl?: string | null; // ajouté
 
@@ -67,11 +66,11 @@ export type Cv = {
   // =======================================================
   // NOUVELLE ADRESSE STRUCTURÉE
   // =======================================================
+  // NB : "profession" et "country" ont été supprimés (DTO + colonnes DB).
 
   addressLine?: string | null;
   postalCode?: string | null;
   city?: string | null;
-  country?: string | null;
 
   // =======================================================
   // NOUVEAUX TÉLÉPHONES

@@ -37,7 +37,7 @@ export function ModernTemplate({ cv, userName, photoUrl, accentColor }: CvTempla
         <div className="text-center">
           <h1 className="text-lg font-semibold leading-tight text-white">{userName}</h1>
           <p className="mt-1 text-[11px] uppercase tracking-[0.15em] text-white/70">
-            {cv.profession || 'Profession'}
+            {cv.title || 'Titre du CV'}
           </p>
         </div>
 

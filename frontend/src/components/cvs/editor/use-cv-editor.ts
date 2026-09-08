@@ -14,9 +14,9 @@ export type TemplateSelection = { templateId: string; accentColor: string };
 
 function buildEmptyCvBase(initialTemplate?: TemplateSelection) {
   return {
-    title: '', profession: '', summary: '', email: '',
+    title: '', summary: '', email: '',
     phone: '', address: '', linkedin: '', github: '', portfolio: '',
-    addressLine: '', postalCode: '', city: '', country: '',
+    addressLine: '', postalCode: '', city: '',
     isActive: false,
     templateId: initialTemplate?.templateId ?? DEFAULT_TEMPLATE_ID,
     accentColor: initialTemplate?.accentColor ?? DEFAULT_ACCENT_COLOR,
@@ -58,13 +58,13 @@ export function useCvEditor(cvId?: string, initialTemplate?: TemplateSelection) 
         const nextCv = await cvsApi.getById(token, cvId);
         setCv(nextCv);
         setDraft({
-          title: nextCv.title ?? '', profession: nextCv.profession ?? '',
+          title: nextCv.title ?? '',
           summary: nextCv.summary ?? '', email: nextCv.email ?? '',
           phone: nextCv.phone ?? '', address: nextCv.address ?? '',
           linkedin: nextCv.linkedin ?? '', github: nextCv.github ?? '',
           portfolio: nextCv.portfolio ?? '', addressLine: nextCv.addressLine ?? '',
           postalCode: nextCv.postalCode ?? '', city: nextCv.city ?? '',
-          country: nextCv.country ?? '', isActive: Boolean(nextCv.isActive),
+          isActive: Boolean(nextCv.isActive),
           templateId: nextCv.templateId ?? DEFAULT_TEMPLATE_ID,
           accentColor: nextCv.accentColor ?? DEFAULT_ACCENT_COLOR,
         });
@@ -118,7 +118,6 @@ export function useCvEditor(cvId?: string, initialTemplate?: TemplateSelection) 
     if (!token) return;
     const payload = {
       title: String(draft.title ?? '').trim(),
-      profession: String(draft.profession ?? '').trim() || undefined,
       summary: String(draft.summary ?? '').trim() || undefined,
       email: String(draft.email ?? '').trim() || undefined,
       phone: String(draft.phone ?? '').trim() || undefined,
@@ -129,7 +128,6 @@ export function useCvEditor(cvId?: string, initialTemplate?: TemplateSelection) 
       addressLine: String(draft.addressLine ?? '').trim() || undefined,
       postalCode: String(draft.postalCode ?? '').trim() || undefined,
       city: String(draft.city ?? '').trim() || undefined,
-      country: String(draft.country ?? '').trim() || undefined,
       templateId: String(draft.templateId ?? DEFAULT_TEMPLATE_ID),
       accentColor: String(draft.accentColor ?? DEFAULT_ACCENT_COLOR),
     };

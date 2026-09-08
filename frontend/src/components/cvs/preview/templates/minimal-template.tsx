@@ -16,7 +16,7 @@ export function MinimalTemplate({ cv, userName, accentColor }: CvTemplateRenderP
       <header>
         <h1 className="text-[24px] font-light tracking-tight text-slate-900">{userName}</h1>
         <div className="mt-2 h-[2px] w-8" style={{ backgroundColor: color }} aria-hidden />
-        <p className="mt-3 text-[12px] uppercase tracking-[0.2em] text-slate-500">{cv.profession || 'Profession'}</p>
+        <p className="mt-3 text-[12px] uppercase tracking-[0.2em] text-slate-500">{cv.title || 'Titre du CV'}</p>
         <div className="mt-4 flex flex-wrap gap-x-5 gap-y-1 text-[11px] text-slate-500">
           {cv.email ? <span>{cv.email}</span> : null}
           {phones.map((p) => <span key={p.id}>{p.number}</span>)}

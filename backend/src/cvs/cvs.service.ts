@@ -72,7 +72,6 @@ export class CvsService {
       select: {
         id: true,
         title: true,
-        profession: true,
         isActive: true,
         isPublic: true,
         createdAt: true,

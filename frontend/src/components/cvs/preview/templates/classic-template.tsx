@@ -15,7 +15,7 @@ export function ClassicTemplate({ cv, userName, accentColor }: CvTemplateRenderP
     <div className="h-full w-full px-10 py-10 font-[Georgia,serif] text-[13px] text-slate-800">
       <header className="border-b-2 pb-4" style={{ borderColor: color }}>
         <h1 className="text-[28px] font-bold tracking-tight text-slate-900">{userName}</h1>
-        <p className="mt-1 text-[13px] font-medium" style={{ color }}>{cv.profession || 'Profession'}</p>
+        <p className="mt-1 text-[13px] font-medium" style={{ color }}>{cv.title || 'Titre du CV'}</p>
         <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-slate-600">
           {cv.email ? <span>{cv.email}</span> : null}
           {phones.map((p) => <span key={p.id}>{p.number}</span>)}

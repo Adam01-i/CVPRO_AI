@@ -2,7 +2,6 @@ import type { Cv } from '@/types/api';
 
 export const SAMPLE_CV: Partial<Cv> = {
   title: 'Chef de projet digital',
-  profession: 'Chef de projet digital',
   summary: "Professionnel organisé avec une solide expérience en gestion de projets digitaux et coordination d'équipes pluridisciplinaires.",
   email: 'prenom.nom@email.com',
   addressLine: '',

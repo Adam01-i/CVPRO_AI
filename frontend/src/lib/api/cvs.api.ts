@@ -33,7 +33,6 @@ export const cvsApi = {
     payload: {
       title: string;
       summary?: string;
-      profession?: string;
       email?: string;
 
       // Legacy
@@ -500,7 +499,7 @@ export const cvsApi = {
     ),
 
 
-    uploadPhoto: async (token: string, cvId: string, file: File): Promise<Cv> => {
+  uploadPhoto: async (token: string, cvId: string, file: File): Promise<Cv> => {
     const formData = new FormData();
     formData.append('photo', file);
 

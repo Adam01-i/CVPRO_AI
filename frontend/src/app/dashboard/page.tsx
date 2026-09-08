@@ -117,7 +117,7 @@ export default function DashboardPage() {
               <div className="mt-6 space-y-4 text-sm text-slate-200">
                 <div className="rounded-[22px] border border-slate-700 bg-slate-800/60 p-4">
                   <div className="text-slate-400">Votre CV</div>
-                  <div className="mt-2 text-lg font-medium text-white">{activeCv ? activeCv.profession ?? activeCv.title : 'À compléter'}</div>
+                  <div className="mt-2 text-lg font-medium text-white">{activeCv ? activeCv.title : 'À compléter'}</div>
                 </div>
                 <div className="rounded-[22px] border border-slate-700 bg-slate-800/60 p-4">
                   <div className="text-slate-400">Suggestion utile</div>

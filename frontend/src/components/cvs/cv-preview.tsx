@@ -134,10 +134,6 @@ export function CvPreview({
             <h2 className="mt-2 text-3xl font-semibold tracking-tight text-slate-900">
               {cv.title || "Titre du CV"}
             </h2>
-
-            <p className="mt-2 text-base text-slate-600">
-              {cv.profession || "Profession"}
-            </p>
           </div>
 
           <div className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600">
