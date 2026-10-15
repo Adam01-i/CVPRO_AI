@@ -108,14 +108,10 @@ export function useCvEditor(cvId?: string, initialTemplate?: TemplateSelection) 
   };
 
   useEffect(() => {
-    if (cvId) { void fetchCv(); return; }
-    setDraft(emptyCvBase);
-    setExperiences([]); setEducations([]); setSkills([]);
-    setProjects([]); setCertifications([]); setLanguages([]);
+    void fetchCv();
   }, [token, cvId]);
 
   const saveCv = async ({ auto = false }: { auto?: boolean } = {}) => {
-    if (!token) return;
     const payload = {
       title: String(draft.title ?? '').trim(),
       summary: String(draft.summary ?? '').trim() || undefined,
@@ -131,7 +127,7 @@ export function useCvEditor(cvId?: string, initialTemplate?: TemplateSelection) 
       templateId: String(draft.templateId ?? DEFAULT_TEMPLATE_ID),
       accentColor: String(draft.accentColor ?? DEFAULT_ACCENT_COLOR),
     };
-    if (!payload.title) {
+    if (token && !payload.title) {
       if (!auto) setError('Le titre du CV est obligatoire.');
       return;
     }
@@ -164,7 +160,7 @@ export function useCvEditor(cvId?: string, initialTemplate?: TemplateSelection) 
       typeof value === 'string' ? value.trim().length > 0 : Boolean(value));
     if (!hasDraftContent) return;
     const timer = setTimeout(() => {
-      if (cvId || draft.title) void saveCv({ auto: true });
+      if (cvId || draft.title || !token) void saveCv({ auto: true });
     }, 900);
     return () => clearTimeout(timer);
   }, [cvId, draft, experiences, educations, skills, projects, certifications, languages, phonesState, linksState, token]);
@@ -204,8 +200,8 @@ export function useCvEditor(cvId?: string, initialTemplate?: TemplateSelection) 
 
   const createExperience = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!token || !cvId) return;
-    const form = new FormData(event.currentTarget);
+    const formElement = event.currentTarget;
+    const form = new FormData(formElement);
     const payload = {
       company: String(form.get('company') ?? '').trim(),
       position: String(form.get('position') ?? '').trim(),
@@ -216,9 +212,19 @@ export function useCvEditor(cvId?: string, initialTemplate?: TemplateSelection) 
       isCurrent: Boolean(form.get('isCurrent')),
     };
     if (!payload.company || !payload.position || !payload.startDate) return;
-    await cvsApi.createExperience(token, cvId, payload as any);
-    event.currentTarget.reset();
-    await resetSectionState();
+    try {
+      if (token && cvId) {
+        await cvsApi.createExperience(token, cvId, payload as any);
+        await resetSectionState();
+      } else {
+        const now = new Date().toISOString();
+        setExperiences((prev) => [{ ...payload, id: `local-${Date.now()}`, cvId: cvId ?? 'local', createdAt: now, updatedAt: now } as Experience, ...prev]);
+      }
+      formElement.reset();
+    } catch (e) {
+      console.error(e);
+      setError('Impossible d’enregistrer cette expérience. Vérifiez les informations puis réessayez.');
+    }
   };
 
   const addPhone = async (payload: { label?: string; number: string; primary?: boolean }) => {
@@ -263,8 +269,8 @@ export function useCvEditor(cvId?: string, initialTemplate?: TemplateSelection) 
 
   const createEducation = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!token || !cvId) return;
-    const form = new FormData(event.currentTarget);
+    const formElement = event.currentTarget;
+    const form = new FormData(formElement);
     const payload = {
       institution: String(form.get('institution') ?? '').trim(),
       degree: String(form.get('degree') ?? '').trim(),
@@ -277,15 +283,20 @@ export function useCvEditor(cvId?: string, initialTemplate?: TemplateSelection) 
       isCurrent: Boolean(form.get('isCurrent')),
     };
     if (!payload.institution || !payload.degree || !payload.startDate) return;
-    await cvsApi.createEducation(token, cvId, payload as any);
-    event.currentTarget.reset();
-    await resetSectionState();
+    if (token && cvId) {
+      await cvsApi.createEducation(token, cvId, payload as any);
+      await resetSectionState();
+    } else {
+      const now = new Date().toISOString();
+      setEducations((prev) => [{ ...payload, id: `local-${Date.now()}`, cvId: cvId ?? 'local', createdAt: now, updatedAt: now } as Education, ...prev]);
+    }
+    formElement.reset();
   };
 
   const createSkill = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!token || !cvId) return;
-    const form = new FormData(event.currentTarget);
+    const formElement = event.currentTarget;
+    const form = new FormData(formElement);
     const payload = {
       name: String(form.get('name') ?? '').trim(),
       category: String(form.get('category') ?? '').trim() || undefined,
@@ -293,15 +304,20 @@ export function useCvEditor(cvId?: string, initialTemplate?: TemplateSelection) 
       years: Number(form.get('years') ?? 0) || undefined,
     };
     if (!payload.name) return;
-    await cvsApi.createSkill(token, cvId, payload as any);
-    event.currentTarget.reset();
-    await resetSectionState();
+    if (token && cvId) {
+      await cvsApi.createSkill(token, cvId, payload as any);
+      await resetSectionState();
+    } else {
+      const skillId = `local-skill-${Date.now()}`;
+      setSkills((prev) => [{ id: `local-${Date.now()}`, cvId: cvId ?? 'local', skillId, level: payload.level, years: payload.years, skill: { id: skillId, name: payload.name, category: payload.category } } as CvSkill, ...prev]);
+    }
+    formElement.reset();
   };
 
   const createProject = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!token || !cvId) return;
-    const form = new FormData(event.currentTarget);
+    const formElement = event.currentTarget;
+    const form = new FormData(formElement);
     const payload = {
       name: String(form.get('name') ?? '').trim(),
       description: String(form.get('description') ?? '').trim() || undefined,
@@ -312,15 +328,20 @@ export function useCvEditor(cvId?: string, initialTemplate?: TemplateSelection) 
       endDate: normalizeDate(String(form.get('endDate') ?? '')) || undefined,
     };
     if (!payload.name) return;
-    await cvsApi.createProject(token, cvId, payload as any);
-    event.currentTarget.reset();
-    await resetSectionState();
+    if (token && cvId) {
+      await cvsApi.createProject(token, cvId, payload as any);
+      await resetSectionState();
+    } else {
+      const now = new Date().toISOString();
+      setProjects((prev) => [{ ...payload, id: `local-${Date.now()}`, cvId: cvId ?? 'local', createdAt: now, updatedAt: now } as Project, ...prev]);
+    }
+    formElement.reset();
   };
 
   const createCertification = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!token || !cvId) return;
-    const form = new FormData(event.currentTarget);
+    const formElement = event.currentTarget;
+    const form = new FormData(formElement);
     const payload = {
       name: String(form.get('name') ?? '').trim(),
       organization: String(form.get('organization') ?? '').trim() || undefined,
@@ -330,31 +351,39 @@ export function useCvEditor(cvId?: string, initialTemplate?: TemplateSelection) 
       credentialUrl: String(form.get('credentialUrl') ?? '').trim() || undefined,
     };
     if (!payload.name) return;
-    await cvsApi.createCertification(token, cvId, payload as any);
-    event.currentTarget.reset();
-    await resetSectionState();
+    if (token && cvId) {
+      await cvsApi.createCertification(token, cvId, payload as any);
+      await resetSectionState();
+    } else {
+      setCertifications((prev) => [{ ...payload, id: `local-${Date.now()}`, cvId: cvId ?? 'local', createdAt: new Date().toISOString() } as Certification, ...prev]);
+    }
+    formElement.reset();
   };
 
   const createLanguage = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!token || !cvId) return;
-    const form = new FormData(event.currentTarget);
+    const formElement = event.currentTarget;
+    const form = new FormData(formElement);
     const payload = {
       name: String(form.get('name') ?? '').trim(),
       level: String(form.get('level') ?? '').trim() || undefined,
     };
     if (!payload.name) return;
-    await cvsApi.createLanguage(token, cvId, payload as any);
-    event.currentTarget.reset();
-    await resetSectionState();
+    if (token && cvId) {
+      await cvsApi.createLanguage(token, cvId, payload as any);
+      await resetSectionState();
+    } else {
+      setLanguages((prev) => [{ ...payload, id: `local-${Date.now()}`, cvId: cvId ?? 'local', createdAt: new Date().toISOString() } as Language, ...prev]);
+    }
+    formElement.reset();
   };
 
-  const removeExperience = async (id: string) => { if (!token || !cvId) return; await cvsApi.removeExperience(token, cvId, id); await resetSectionState(); };
-  const removeEducation = async (id: string) => { if (!token || !cvId) return; await cvsApi.removeEducation(token, cvId, id); await resetSectionState(); };
-  const removeSkill = async (id: string) => { if (!token || !cvId) return; await cvsApi.removeSkill(token, cvId, id); await resetSectionState(); };
-  const removeProject = async (id: string) => { if (!token || !cvId) return; await cvsApi.removeProject(token, cvId, id); await resetSectionState(); };
-  const removeCertification = async (id: string) => { if (!token || !cvId) return; await cvsApi.removeCertification(token, cvId, id); await resetSectionState(); };
-  const removeLanguage = async (id: string) => { if (!token || !cvId) return; await cvsApi.removeLanguage(token, cvId, id); await resetSectionState(); };
+  const removeExperience = async (id: string) => { if (!token || !cvId || id.startsWith('local-')) { setExperiences((prev) => prev.filter((item) => item.id !== id)); return; } await cvsApi.removeExperience(token, cvId, id); await resetSectionState(); };
+  const removeEducation = async (id: string) => { if (!token || !cvId || id.startsWith('local-')) { setEducations((prev) => prev.filter((item) => item.id !== id)); return; } await cvsApi.removeEducation(token, cvId, id); await resetSectionState(); };
+  const removeSkill = async (id: string) => { if (!token || !cvId || id.startsWith('local-')) { setSkills((prev) => prev.filter((item) => item.id !== id)); return; } await cvsApi.removeSkill(token, cvId, id); await resetSectionState(); };
+  const removeProject = async (id: string) => { if (!token || !cvId || id.startsWith('local-')) { setProjects((prev) => prev.filter((item) => item.id !== id)); return; } await cvsApi.removeProject(token, cvId, id); await resetSectionState(); };
+  const removeCertification = async (id: string) => { if (!token || !cvId || id.startsWith('local-')) { setCertifications((prev) => prev.filter((item) => item.id !== id)); return; } await cvsApi.removeCertification(token, cvId, id); await resetSectionState(); };
+  const removeLanguage = async (id: string) => { if (!token || !cvId || id.startsWith('local-')) { setLanguages((prev) => prev.filter((item) => item.id !== id)); return; } await cvsApi.removeLanguage(token, cvId, id); await resetSectionState(); }
 
   const sectionStatus = useMemo(() => {
     const hasText = (v: unknown) => typeof v === 'string' && v.trim().length > 0;

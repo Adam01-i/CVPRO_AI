@@ -58,13 +58,25 @@ export function ModernTemplate({ cv, userName, photoUrl, accentColor }: CvTempla
         {cv.skills && cv.skills.length > 0 ? (
           <div className="border-t border-white/15 pt-4">
             <h3 className="mb-2 text-[11px] font-semibold uppercase tracking-[0.15em] text-white/70">Compétences</h3>
-            <div className="flex flex-wrap gap-1.5">
-              {cv.skills.map((s: any) => (
-                <span key={s.id} className="rounded-full bg-white/15 px-2 py-1 text-[10px] text-white">
-                  {s.skill?.name}
-                </span>
-              ))}
-            </div>
+            <ul className="space-y-1.5">
+              {cv.skills.map((s: any) => {
+                const levelLabels: Record<string, string> = {
+                  BEGINNER: 'Débutant',
+                  INTERMEDIATE: 'Intermédiaire',
+                  ADVANCED: 'Avancé',
+                  EXPERT: 'Expert',
+                };
+                const name = s.skill?.name ?? s.name;
+                if (!name) return null;
+                const level = s.level ? levelLabels[s.level] ?? s.level : null;
+                return (
+                  <li key={s.id} className="flex items-baseline justify-between gap-2 border-b border-white/10 py-1.5 last:border-0">
+                    <span className="min-w-0 break-words text-[11px] leading-5 text-white/85">{name}</span>
+                    {level ? <span className="shrink-0 text-right text-[11px] leading-5 text-white/70">{level}</span> : null}
+                  </li>
+                );
+              })}
+            </ul>
           </div>
         ) : null}
 
@@ -153,7 +165,22 @@ export function ModernTemplate({ cv, userName, photoUrl, accentColor }: CvTempla
                 <div key={p.id}>
                   <p className="font-semibold text-slate-900">{p.name}</p>
                   {p.description ? <p className="mt-1 text-[12px] leading-5 text-slate-700">{p.description}</p> : null}
-                  {p.technologies ? <p className="mt-1 text-[11px] text-slate-500">{p.technologies}</p> : null}
+                  {p.technologies ? (
+                    <div className="mt-2 flex flex-wrap gap-1.5">
+                      {p.technologies
+                        .split(/[,;\n]+/)
+                        .map((technology: string) => technology.trim())
+                        .filter(Boolean)
+                        .map((technology: string, index: number) => (
+                          <span
+                            key={`${p.id}-technology-${index}`}
+                            className="rounded-md border border-slate-200 bg-slate-50 px-2 py-0.5 text-[10px] font-medium leading-4 text-slate-600"
+                          >
+                            {technology}
+                          </span>
+                        ))}
+                    </div>
+                  ) : null}
                 </div>
               ))}
             </div>

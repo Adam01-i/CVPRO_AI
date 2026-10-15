@@ -8,7 +8,15 @@ export function CvLanguagesForm({ editor }: { editor: any }) {
       </div>
       <form onSubmit={editor.createLanguage} className="grid gap-4 rounded-2xl border border-slate-200 bg-slate-50 p-4 md:grid-cols-2">
         <input name="name" placeholder="Langue" className="rounded-xl border border-slate-200 bg-white px-3 py-2.5" />
-        <input name="level" placeholder="Niveau" className="rounded-xl border border-slate-200 bg-white px-3 py-2.5" />
+        <select name="level" defaultValue="" className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-slate-700">
+          <option value="">Choisir un niveau</option>
+          <option value="Débutant">Débutant</option>
+          <option value="Intermédiaire">Intermédiaire</option>
+          <option value="Avancé">Avancé</option>
+          <option value="Courant">Courant</option>
+          <option value="Bilingue">Bilingue</option>
+          <option value="Langue maternelle">Langue maternelle</option>
+        </select>
         <div className="md:col-span-2 flex justify-end">
           <button type="submit" className="rounded-full bg-slate-900 px-4 py-2.5 text-sm font-medium text-white">+ Ajouter une langue</button>
         </div>

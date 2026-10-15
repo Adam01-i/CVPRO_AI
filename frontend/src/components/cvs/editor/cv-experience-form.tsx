@@ -8,11 +8,11 @@ export function CvExperienceForm({ editor }: { editor: any }) {
         <p className="mt-1 text-sm text-slate-500">Ajoutez vos expériences les plus pertinentes.</p>
       </div>
       <form onSubmit={editor.createExperience} className="grid gap-4 rounded-2xl border border-slate-200 bg-slate-50 p-4 md:grid-cols-2">
-        <input name="company" placeholder="Entreprise" className="rounded-xl border border-slate-200 bg-white px-3 py-2.5" />
-        <input name="position" placeholder="Poste" className="rounded-xl border border-slate-200 bg-white px-3 py-2.5" />
+        <input name="company" placeholder="Entreprise" required className="rounded-xl border border-slate-200 bg-white px-3 py-2.5" />
+        <input name="position" placeholder="Poste" required className="rounded-xl border border-slate-200 bg-white px-3 py-2.5" />
         <input name="location" placeholder="Localisation" className="rounded-xl border border-slate-200 bg-white px-3 py-2.5" />
         <label className="flex items-center gap-2 text-sm text-slate-700"><input type="checkbox" name="isCurrent" className="h-4 w-4" /> Poste actuel</label>
-        <input type="date" name="startDate" className="rounded-xl border border-slate-200 bg-white px-3 py-2.5" />
+        <input type="date" name="startDate" required className="rounded-xl border border-slate-200 bg-white px-3 py-2.5" />
         <input type="date" name="endDate" className="rounded-xl border border-slate-200 bg-white px-3 py-2.5" />
         <textarea name="description" rows={4} placeholder="Description" className="md:col-span-2 rounded-xl border border-slate-200 bg-white px-3 py-2.5" />
         <div className="md:col-span-2 flex justify-end">
